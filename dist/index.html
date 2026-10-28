@@ -139,6 +139,20 @@ svg text { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
 .statsheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 14px; font-size: 0.85rem; }
 .statsheet div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--line); padding-block: 2px; }
 .statsheet span:last-child { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+/* Guide: a readable article under the tool. */
+.guide { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 22px; scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.guide h2 { font-size: 1.5rem; }
+.guide h3 { font-size: 1.15rem; border-bottom: 2px solid var(--accent); padding-bottom: 4px; justify-self: start; }
+.guide section { display: grid; gap: 10px; max-width: 72ch; scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.guide p, .guide li, .guide dd { line-height: 1.55; }
+.guide ol, .guide ul { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; }
+.guide dl { margin: 0; display: grid; gap: 4px; }
+.guide dt { font-weight: 600; margin-top: 8px; }
+.guide dd { margin: 0; color: var(--ink); }
+.guide dd > * + * { margin-top: 6px; }
+.guide a, header.top a { color: var(--accent); text-underline-offset: 2px; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.9rem; }
 </style>
 
 </head>
@@ -147,6 +161,7 @@ svg text { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
   <header class="top">
     <h1>Archaeology Point Planner</h1>
     <p class="muted">Obelisk Miner. Enter your upgrades, pick a goal, and get the skill point split that maximizes it. Odds come from the game's spawn tables, block stats and crit rolls, not from guesswork.</p>
+    <p class="small">New here? Fill in <strong>Your archaeology</strong>, pick a <strong>Goal</strong>, tap <strong>Find best points</strong>. <a href="#guide">Read the full guide</a> for what every field means.</p>
   </header>
 
   <div class="cols">
@@ -246,6 +261,133 @@ svg text { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
       <div id="results" class="stack"></div>
     </section>
   </div>
+
+  <article class="guide" id="guide" aria-labelledby="guide-title">
+    <h2 id="guide-title">Guide</h2>
+    <nav class="toc" aria-label="Guide sections">
+      <a href="#g-start">Quick start</a>
+      <a href="#g-setup">Filling in your setup</a>
+      <a href="#g-goals">Choosing a goal</a>
+      <a href="#g-results">Reading the results</a>
+      <a href="#g-model">How the calculation works</a>
+      <a href="#g-faq">Questions</a>
+    </nav>
+
+    <section id="g-start">
+      <h3>Quick start</h3>
+      <ol>
+        <li>Open the Archaeology menu in the game and note your <em>Ascension</em>, <em>Archaeology level</em> and <em>Highest stage</em> (top of the Stats popup).</li>
+        <li>Enter them under <strong>Your archaeology</strong>, then type the points you currently have in each skill under <strong>Current points</strong>.</li>
+        <li>Open <strong>Upgrades</strong> and copy the level of every upgrade you own. <em>Max all</em> fills a whole group at once.</li>
+        <li>Set <strong>Other bonuses</strong> and <strong>Block cards</strong> if you have any.</li>
+        <li>Open <strong>Check against the game</strong>. Every number should match the Stats popup in the game. If one doesn't, a field above is off: fix it before trusting the results.</li>
+        <li>Pick a <strong>Goal</strong> and tap <strong>Find best points</strong>. Copy the recommended points into the game.</li>
+      </ol>
+      <p>Everything you enter stays in this browser, so next time you only change what moved. <strong>Load example</strong> fills in a real Ascension 1, level 100 player if you just want to look around.</p>
+    </section>
+
+    <section id="g-setup">
+      <h3>Filling in your setup</h3>
+      <dl>
+        <dt>Ascension</dt>
+        <dd>0, 1 or 2. It decides which skills, upgrades and blocks exist: Divinity and Divine blocks need Ascension 1, Corruption and tier 4 blocks need Ascension 2.</dd>
+        <dt>Archaeology level</dt>
+        <dd>One skill point per level. With Ascension 1+, the <em>Stat Points</em> upgrade adds up to 5 more. The line under the fields shows the total you have to spend.</dd>
+        <dt>Highest stage</dt>
+        <dd>Only matters with the Block Bonker skill, which gives +1% damage and +1% max stamina per highest stage, up to stage 100 (so +100% at most). Beyond 100 it changes nothing.</dd>
+        <dt>Attack speed</dt>
+        <dd>The <em>Atk Speed</em> value in the Stats popup. It does not change how many hits a block needs, but it changes how many hits fit between ability cooldowns and crosshair spawns, and how long a run lasts.</dd>
+        <dt>Current points</dt>
+        <dd>What you have now. The planner always spends your full budget; current points are only there for comparison (and as a starting guess).</dd>
+        <dt>Check against the game</dt>
+        <dd>Your derived stats with your current points, laid out like the in-game Stats popup. This is the best way to catch a mistyped upgrade.</dd>
+        <dt>Upgrades</dt>
+        <dd>Every Archaeology upgrade, grouped as in the game. Gem upgrades are capped at your level + 4. Upgrades from a higher Ascension than yours are greyed out and ignored.</dd>
+        <dt>Other bonuses</dt>
+        <dd>Things outside the Archaeology menu that change it: the <em>Avada Keda-</em> and <em>Block Bonker</em> skills, the Archaeology and Ascension bundles, the Arch Ability card (levels 1–3 cut ability cooldowns by 3%, 6% or 10%; for infernal, enter the % shown on the card), idols, pets, the Geoduck tribute and other infernal card multipliers. Leave anything you don't have at 0 or unticked.</dd>
+        <dt>Block cards</dt>
+        <dd>Your card level for each block. A card cuts that block's HP and raises its exp and fragments: level 1 by 10%, level 2 by 20%, Polychrome by 35% (50% with the Polychrome upgrade). Infernal keeps the Polychrome effect and adds its global bonus.</dd>
+        <dt>Limits</dt>
+        <dd>Optional minimum or maximum for any skill, for example "keep Luck at 30" or "no more than 10 Agility". Leave empty for the normal range.</dd>
+        <dt>Save or share setup</dt>
+        <dd>Copies your whole setup as text, so you can move it to another device or send it to a friend, who pastes it in and taps <em>Load pasted setup</em>.</dd>
+      </dl>
+    </section>
+
+    <section id="g-goals">
+      <h3>Choosing a goal</h3>
+      <dl>
+        <dt>Highest floor</dt>
+        <dd>
+          <p>Maximizes the deepest floor you still reach in at least the chosen share of runs. At 50% it is your typical run. At 5% it is a good run you will see about once in 20 tries. Use it to push your Highest stage, for example for an Ascension requirement.</p>
+          <p>Lower percentages favor builds that sometimes get lucky; higher ones favor builds that are reliable. If you need a specific stage, look at the chart in the results: it shows your chance of reaching every floor.</p>
+        </dd>
+        <dt>Fragments</dt>
+        <dd>
+          <p>Maximizes the total value of fragments from one run. You set what one fragment of each type is worth to you; the planner adds up <em>value × expected fragments</em>. Block tiers are already included (a tier 3 block drops 4× a tier 1 block), so values are only about which currency you want.</p>
+          <ul>
+            <li>All 1: the most fragments by count. Cheap types dominate.</li>
+            <li>One type at 1, the rest 0: farm only that type, for example Divine for an idol.</li>
+            <li>Weighted, e.g. Epic 1, Legendary 2, Mythic 5: one Mythic counts as five Epics. Basing the values on what your next upgrades cost works well.</li>
+          </ul>
+        </dd>
+        <dt>Experience</dt>
+        <dd>Maximizes exp per run, which levels you up and gives more skill points.</dd>
+        <dt>Average floor</dt>
+        <dd>Maximizes the average highest floor over many runs.</dd>
+        <dt>Per hour</dt>
+        <dd>For fragments and experience you can tick <em>Per hour</em>. A deeper build earns more per run but each run also lasts longer; per hour compares them by time spent mining, which is what matters when you leave the game idle.</dd>
+      </dl>
+    </section>
+
+    <section id="g-results">
+      <h3>Reading the results</h3>
+      <dl>
+        <dt>Best points</dt>
+        <dd>The filled bar is the recommended number of points, out of that skill's cap. The thin tick marks your current points, and the green or red number is the change.</dd>
+        <dt>Summary numbers</dt>
+        <dd>The first one is your goal, with your current build's value under it. The others show what the recommended build does elsewhere: typical (median) highest floor, exp per run and how long a run lasts.</dd>
+        <dt>Chance to reach each floor</dt>
+        <dd>The solid line is the recommended build, the dashed line your current one. Read it as "this share of runs gets at least this far". The dotted line marks the share you chose for the Highest floor goal. A steep drop is a wall: a boss floor, a new block tier or a floor where block HP doubles (100, 150, 200, 250, 300).</dd>
+        <dt>Fragments per run</dt>
+        <dd>Expected fragments of each type from one run for both builds, and per hour for the recommended one.</dd>
+        <dt>Close runners-up</dt>
+        <dd>Other builds that score almost the same. Differences of a point or two between them are noise; pick whichever you like.</dd>
+        <dt>Double-check with simulated runs</dt>
+        <dd>Plays 2,000 runs hit by hit with real random rolls and compares them with the calculation. Expect them to agree within about a floor and a few percent; small differences are just luck in the simulation.</dd>
+      </dl>
+    </section>
+
+    <section id="g-model">
+      <h3>How the calculation works</h3>
+      <p>The planner does not guess from a few sample runs. It computes the odds of a run directly from the game's rules:</p>
+      <ol>
+        <li><strong>Your stats.</strong> Upgrades, cards, bonuses and a point split give damage, armor penetration, crit chances and multipliers, max stamina and mod chances, using the game's own formulas and rounding.</li>
+        <li><strong>Hits per block.</strong> Each hit is a normal hit, a crit, a super crit or an ultra crit (each tier rolls only if the one before it did), dealing (damage − armor left after penetration) × crit multiplier, at least 1. From those odds the planner computes exactly how many hits each block takes on average and how much that varies, including Enrage, crosshair auto-taps and Quake splash damage.</li>
+        <li><strong>Each floor.</strong> A floor has 24 slots. Each slot rolls the rarest block first (Divine, then Mythic, down to Dirt) using the game's spawn table for that floor; if every roll fails the slot is empty. Boss floors use their fixed layout. Block HP doubles at floors 100, 150, 200, 250 and 300, and new block tiers appear at set floors.</li>
+        <li><strong>Stamina.</strong> Every hit costs 1 stamina; stamina mods and Flurry give some back, but never above max. The planner tracks the full spread of possible stamina levels floor by floor, which gives the chance of reaching each floor and the chance of breaking each block.</li>
+        <li><strong>Rewards.</strong> Expected exp and fragments are each block's reward (with loot and exp mods, cards and gleaming floors) times the chance you break it.</li>
+        <li><strong>Search.</strong> It scans a spread of builds across your budget, then repeatedly moves points between skills while the goal improves, and finally re-scores the best few with full precision.</li>
+      </ol>
+      <p><strong>Assumptions.</strong> Abilities are on auto-cast. Crosshairs count only as auto-taps (manual tapping and fairies are ignored), with a crosshair every 3.5 seconds. The game's numbers come from the <a href="https://shminer.miraheze.org/wiki/Archaeology" target="_blank" rel="noopener">Obelisk Miner wiki</a> and the reverse-engineered formulas of <a href="https://github.com/lobogrande/IoM-Arch-Optimizer-Web" target="_blank" rel="noopener">IoM Arch Optimizer</a>. A game update can change them.</p>
+    </section>
+
+    <section id="g-faq">
+      <h3>Questions</h3>
+      <dl>
+        <dt>Why does it put so much into Strength?</dt>
+        <dd>Strength raises flat damage, damage % and crit damage at once, and crits multiply everything. Once a block takes one hit instead of two, its stamina cost halves, so damage usually beats extra stamina from Agility for going deeper.</dd>
+        <dt>Why are Perception or Intellect at 0 for pushing floors?</dt>
+        <dd>Their armor penetration only helps while blocks still have armor left after your penetration. If yours already covers the floors you reach, more does nothing for depth. They return for fragment and exp goals.</dd>
+        <dt>My real runs differ from the numbers.</dt>
+        <dd>First open <em>Check against the game</em>: a mismatch there means a field is off. Otherwise remember these are averages and odds; a single run can be lucky or unlucky, and manual crosshair taps add damage the planner ignores.</dd>
+        <dt>Why are some points unspent?</dt>
+        <dd>Only when every skill you allowed is already at its cap. Raise a cap with the <em>Exp Gain / All Stat Caps +5</em> upgrade or loosen your limits.</dd>
+        <dt>Does it change anything in my game?</dt>
+        <dd>No. It only reads what you type. You apply the points yourself in the game.</dd>
+      </dl>
+    </section>
+  </article>
 </div>
 
 <script id="engine-src">var Engine = (function () {
