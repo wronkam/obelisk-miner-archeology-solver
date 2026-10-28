@@ -1505,7 +1505,7 @@ function screenshotPreset() {
   });
   // Fragment-gain externals are not visible on the stats page; these values
   // reproduce its 6.91x total and can be replaced with the real ones.
-  Object.assign(p.ext, { avada: true, blockBonker: true, geoduck: 200, axolotl: 5, hestia: 80 });
+  Object.assign(p.ext, { avada: true, blockBonker: true, geoduck: 200, axolotl: 5, hestia: 80, archCard: 4, archCardInfernal: 14.07 });
   for (const id of BLOCK_IDS) if (!id.endsWith('4')) p.cards[id] = 3;
   return { profile: p, alloc: { Str: 0, Agi: 0, Per: 30, Int: 30, Luck: 30, Div: 15, Corr: 0 } };
 }
