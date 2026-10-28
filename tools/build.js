@@ -33,6 +33,21 @@ const page = read('src/ui/template.html')
   .replace('/*WORKER*/', () => read('src/ui/worker.js'))
   .replace('/*APP*/', () => read('src/ui/app.js'));
 
+// dist/artifact.html: page body for a claude.ai artifact (the host adds the document shell).
+// dist/index.html: complete standalone page (GitHub Pages, opening the file locally).
+const split = page.indexOf('<div class="wrap">');
+const standalone = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Finds the best Obelisk Miner Archaeology skill point split for highest floor, fragments or experience.">
+${page.slice(0, split)}</head>
+<body>
+${page.slice(split)}</body>
+</html>
+`;
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
-fs.writeFileSync(path.join(root, 'dist/index.html'), page);
-console.log(`dist/index.html written (${(page.length / 1024).toFixed(0)} KB, ${exported.length} engine exports)`);
+fs.writeFileSync(path.join(root, 'dist/artifact.html'), page);
+fs.writeFileSync(path.join(root, 'dist/index.html'), standalone);
+console.log(`dist/index.html and dist/artifact.html written (${(page.length / 1024).toFixed(0)} KB, ${exported.length} engine exports)`);

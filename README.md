@@ -8,7 +8,9 @@ for a goal you pick:
 - **Experience** per run or per hour.
 - **Average floor** reached.
 
-Open `dist/index.html` in a browser. It is a single file with no server and no install.
+**Use it online: https://wronkam.github.io/obelisk-miner-archeology-solver/**
+
+Or open `dist/index.html` in a browser: it is a single file with no server and no install.
 Your setup is saved in the browser.
 
 ## How it works
@@ -40,8 +42,11 @@ fairies ignored.
 
 ```
 npm test        # stats vs reference fixtures and screenshots, model vs simulation, optimizer
-npm run build   # writes dist/index.html
+npm run build   # writes dist/index.html (standalone) and dist/artifact.html (claude.ai page body)
 ```
+
+Every push to the default branch runs the tests, builds the page and deploys it to
+GitHub Pages (`.github/workflows/pages.yml`).
 
 Sources live in `src/engine` (ES modules, usable from Node) and `src/ui`.
 
