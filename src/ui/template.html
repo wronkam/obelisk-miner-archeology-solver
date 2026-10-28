@@ -1,0 +1,115 @@
+<title>Archaeology Point Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Pixelify+Sans:wght@500;600&display=swap">
+<style>/*STYLE*/</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Archaeology Point Planner</h1>
+    <p class="muted">Obelisk Miner. Enter your upgrades, pick a goal, and get the skill point split that maximizes it. Odds come from the game's spawn tables, block stats and crit rolls, not from guesswork.</p>
+  </header>
+
+  <div class="cols">
+    <section class="stack" aria-label="Setup">
+      <div class="panel">
+        <h2>Goal</h2>
+        <div class="seg" id="goal-seg" role="group" aria-label="Goal">
+          <button type="button" data-goal="floorChance">Highest floor</button>
+          <button type="button" data-goal="frags">Fragments</button>
+          <button type="button" data-goal="xp">Experience</button>
+          <button type="button" data-goal="expFloor">Average floor</button>
+        </div>
+        <div id="goal-floor" class="grid2">
+          <label for="chance">Reach it in at least this share of runs (%)
+            <input id="chance" type="number" min="0.1" max="99" step="0.1" value="5">
+          </label>
+          <p class="small muted" style="align-self:end">Finds the deepest floor you still reach in that share of runs. Lower = luckier runs count.</p>
+        </div>
+        <div id="goal-frags" class="stack" hidden>
+          <p class="small muted">Value of one fragment of each type (0 ignores it).</p>
+          <div class="grid3" id="weights"></div>
+        </div>
+        <label class="check" id="perhour-wrap" for="perhour"><input id="perhour" type="checkbox"> Per hour of mining instead of per run</label>
+      </div>
+
+      <div class="panel">
+        <div class="row" style="justify-content:space-between">
+          <h2>Your archaeology</h2>
+          <div class="row">
+            <button type="button" class="btn" id="load-example">Load example</button>
+            <button type="button" class="btn" id="reset">Clear</button>
+          </div>
+        </div>
+        <div class="grid2">
+          <label for="asc">Ascension
+            <select id="asc"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select>
+          </label>
+          <label for="archLevel">Archaeology level <input id="archLevel" type="number" min="1" step="1"></label>
+          <label for="highestFloor">Highest stage <input id="highestFloor" type="number" min="1" step="1"></label>
+          <label for="atkSpeed">Attack speed (/sec) <input id="atkSpeed" type="number" min="0.5" step="0.5"></label>
+        </div>
+        <p class="small muted" id="budget-line"></p>
+        <h3>Current points</h3>
+        <div class="grid3" id="alloc"></div>
+      </div>
+
+      <details class="panel" id="stats-panel">
+        <summary><h2>Check against the game</h2><span class="small muted">stats popup</span></summary>
+        <p class="small muted">With your current points these should match the Stats popup in the Archaeology menu. If one differs, an upgrade or bonus below is off.</p>
+        <div class="statsheet" id="statsheet"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Upgrades</h2><span class="small muted" id="upg-count"></span></summary>
+        <div id="upgrades" class="stack"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Other bonuses</h2><span class="small muted">idols, pets, skills, bundles</span></summary>
+        <div id="externals" class="stack"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Block cards</h2><span class="small muted" id="card-count"></span></summary>
+        <div class="row">
+          <span class="small muted">Set all tiers 1–3 to</span>
+          <button type="button" class="btn" data-cards="0">None</button>
+          <button type="button" class="btn" data-cards="3">Polychrome</button>
+        </div>
+        <div class="cards" id="cards"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Limits</h2><span class="small muted">optional</span></summary>
+        <p class="small muted">Force a minimum or maximum for any skill. Empty means its normal range.</p>
+        <div id="limits" class="stack"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Save or share setup</h2></summary>
+        <p class="small muted">Your setup is kept in this browser. Copy it to move it elsewhere, or paste one in.</p>
+        <textarea id="io" aria-label="Setup as text"></textarea>
+        <div class="row">
+          <button type="button" class="btn" id="copy">Copy setup</button>
+          <button type="button" class="btn" id="apply">Load pasted setup</button>
+          <span class="small muted" id="io-msg"></span>
+        </div>
+      </details>
+    </section>
+
+    <section class="stack results" aria-label="Results">
+      <div class="panel">
+        <button type="button" class="btn primary" id="run">Find best points</button>
+        <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+        <p class="small muted" id="status">Uses every point you have. Takes a few seconds.</p>
+      </div>
+      <div id="results" class="stack"></div>
+    </section>
+  </div>
+</div>
+
+<script id="engine-src">/*ENGINE*/</script>
+<script id="worker-src" type="text/plain">/*WORKER*/</script>
+<script>/*APP*/</script>

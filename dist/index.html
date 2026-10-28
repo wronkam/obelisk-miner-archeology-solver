@@ -1,0 +1,2019 @@
+<title>Archaeology Point Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Pixelify+Sans:wght@500;600&display=swap">
+<style>/* Layout: one column on phones; on wide screens setup (left) and results (right, sticky). */
+:root {
+  --bg: #eef0ec;
+  --panel: #fbfcfa;
+  --ink: #1d2422;
+  --muted: #5d6a66;
+  --line: #d3d9d5;
+  --accent: #b5701c;
+  --accent-ink: #ffffff;
+  --accent-soft: #f3e3cb;
+  --good: #2f7d4f;
+  --bad: #b23b3b;
+  --frag-1: #7d8784; --frag-2: #3b72c4; --frag-3: #8a4fc4; --frag-4: #d08a16; --frag-5: #c43d3d; --frag-6: #2fa3b3;
+  --font-display: "Pixelify Sans", "Courier New", monospace;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151a19; --panel: #1d2422; --ink: #e5ebe8; --muted: #9aa8a3; --line: #33403c;
+    --accent: #e3a04a; --accent-ink: #1a1408; --accent-soft: #3a2c19; --good: #5cc287; --bad: #e07a7a;
+    --frag-1: #a7b1ad; --frag-2: #6c9ee8; --frag-3: #b384e6; --frag-4: #e8ab3c; --frag-5: #ea6d6d; --frag-6: #5ccfdd;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151a19; --panel: #1d2422; --ink: #e5ebe8; --muted: #9aa8a3; --line: #33403c;
+  --accent: #e3a04a; --accent-ink: #1a1408; --accent-soft: #3a2c19; --good: #5cc287; --bad: #e07a7a;
+  --frag-1: #a7b1ad; --frag-2: #6c9ee8; --frag-3: #b384e6; --frag-4: #e8ab3c; --frag-5: #ea6d6d; --frag-6: #5ccfdd;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: 0.01em; }
+h1 { font-size: 1.9rem; line-height: 1.1; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1rem; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 20px; }
+header.top { display: grid; gap: 6px; }
+header.top p { max-width: 68ch; }
+.cols { display: grid; gap: 20px; align-items: start; }
+@media (min-width: 920px) {
+  .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+}
+.stack { display: grid; gap: 14px; min-width: 0; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+details.panel > summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary::after { content: "+"; font-family: var(--font-data); color: var(--muted); }
+details.panel[open] > summary::after { content: "−"; }
+details.panel:not([open]) { gap: 0; }
+
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button, .btn {
+  font: inherit; font-size: 0.9rem; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  border-radius: var(--radius); padding: 7px 11px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:hover, .seg button:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; padding: 11px 16px; font-size: 1rem; }
+.btn.primary:disabled { opacity: 0.6; cursor: progress; }
+.btn.link { border: none; background: none; padding: 2px 0; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+label { display: grid; gap: 3px; font-size: 0.85rem; color: var(--muted); min-width: 0; }
+input[type="number"], input[type="text"], select, textarea {
+  font: inherit; font-family: var(--font-data); font-size: 0.95rem; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; width: 100%; min-width: 0;
+}
+textarea { min-height: 90px; font-size: 0.8rem; }
+.check { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 0.9rem; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.upg { display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 8px; align-items: center; padding-block: 4px; border-bottom: 1px dashed var(--line); }
+.upg:last-child { border-bottom: none; }
+.upg .name { font-size: 0.88rem; }
+.upg .meta { font-size: 0.75rem; color: var(--muted); }
+.upg.locked { opacity: 0.45; }
+.group-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 6px; }
+.group-head h3 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.cards { display: grid; grid-template-columns: 70px repeat(4, minmax(0, 1fr)); gap: 6px; align-items: center; font-size: 0.85rem; }
+.cards .h { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Results */
+.verdict { display: grid; gap: 10px; }
+.bars { display: grid; gap: 8px; }
+.bar { display: grid; grid-template-columns: 92px minmax(0, 1fr) 70px; gap: 10px; align-items: center; font-size: 0.9rem; }
+.bar .track { height: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 2px; position: relative; overflow: hidden; }
+.bar .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.bar .cur { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); opacity: 0.55; }
+.bar .val { text-align: right; }
+.delta.up { color: var(--good); }
+.delta.down { color: var(--bad); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.kpi { border-top: 3px solid var(--line); padding-top: 6px; display: grid; gap: 2px; }
+.kpi.main { border-top-color: var(--accent); }
+.kpi .v { font-family: var(--font-data); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.kpi .l { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+td.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.frag-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: baseline; }
+.progress { height: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.progress > div { height: 100%; background: var(--accent); width: 0; transition: width 0.2s; }
+@media (prefers-reduced-motion: reduce) { .progress > div { transition: none; } }
+.note { font-size: 0.82rem; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
+svg text { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
+.statsheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 14px; font-size: 0.85rem; }
+.statsheet div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--line); padding-block: 2px; }
+.statsheet span:last-child { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Archaeology Point Planner</h1>
+    <p class="muted">Obelisk Miner. Enter your upgrades, pick a goal, and get the skill point split that maximizes it. Odds come from the game's spawn tables, block stats and crit rolls, not from guesswork.</p>
+  </header>
+
+  <div class="cols">
+    <section class="stack" aria-label="Setup">
+      <div class="panel">
+        <h2>Goal</h2>
+        <div class="seg" id="goal-seg" role="group" aria-label="Goal">
+          <button type="button" data-goal="floorChance">Highest floor</button>
+          <button type="button" data-goal="frags">Fragments</button>
+          <button type="button" data-goal="xp">Experience</button>
+          <button type="button" data-goal="expFloor">Average floor</button>
+        </div>
+        <div id="goal-floor" class="grid2">
+          <label for="chance">Reach it in at least this share of runs (%)
+            <input id="chance" type="number" min="0.1" max="99" step="0.1" value="5">
+          </label>
+          <p class="small muted" style="align-self:end">Finds the deepest floor you still reach in that share of runs. Lower = luckier runs count.</p>
+        </div>
+        <div id="goal-frags" class="stack" hidden>
+          <p class="small muted">Value of one fragment of each type (0 ignores it).</p>
+          <div class="grid3" id="weights"></div>
+        </div>
+        <label class="check" id="perhour-wrap" for="perhour"><input id="perhour" type="checkbox"> Per hour of mining instead of per run</label>
+      </div>
+
+      <div class="panel">
+        <div class="row" style="justify-content:space-between">
+          <h2>Your archaeology</h2>
+          <div class="row">
+            <button type="button" class="btn" id="load-example">Load example</button>
+            <button type="button" class="btn" id="reset">Clear</button>
+          </div>
+        </div>
+        <div class="grid2">
+          <label for="asc">Ascension
+            <select id="asc"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select>
+          </label>
+          <label for="archLevel">Archaeology level <input id="archLevel" type="number" min="1" step="1"></label>
+          <label for="highestFloor">Highest stage <input id="highestFloor" type="number" min="1" step="1"></label>
+          <label for="atkSpeed">Attack speed (/sec) <input id="atkSpeed" type="number" min="0.5" step="0.5"></label>
+        </div>
+        <p class="small muted" id="budget-line"></p>
+        <h3>Current points</h3>
+        <div class="grid3" id="alloc"></div>
+      </div>
+
+      <details class="panel" id="stats-panel">
+        <summary><h2>Check against the game</h2><span class="small muted">stats popup</span></summary>
+        <p class="small muted">With your current points these should match the Stats popup in the Archaeology menu. If one differs, an upgrade or bonus below is off.</p>
+        <div class="statsheet" id="statsheet"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Upgrades</h2><span class="small muted" id="upg-count"></span></summary>
+        <div id="upgrades" class="stack"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Other bonuses</h2><span class="small muted">idols, pets, skills, bundles</span></summary>
+        <div id="externals" class="stack"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Block cards</h2><span class="small muted" id="card-count"></span></summary>
+        <div class="row">
+          <span class="small muted">Set all tiers 1–3 to</span>
+          <button type="button" class="btn" data-cards="0">None</button>
+          <button type="button" class="btn" data-cards="3">Polychrome</button>
+        </div>
+        <div class="cards" id="cards"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Limits</h2><span class="small muted">optional</span></summary>
+        <p class="small muted">Force a minimum or maximum for any skill. Empty means its normal range.</p>
+        <div id="limits" class="stack"></div>
+      </details>
+
+      <details class="panel">
+        <summary><h2>Save or share setup</h2></summary>
+        <p class="small muted">Your setup is kept in this browser. Copy it to move it elsewhere, or paste one in.</p>
+        <textarea id="io" aria-label="Setup as text"></textarea>
+        <div class="row">
+          <button type="button" class="btn" id="copy">Copy setup</button>
+          <button type="button" class="btn" id="apply">Load pasted setup</button>
+          <span class="small muted" id="io-msg"></span>
+        </div>
+      </details>
+    </section>
+
+    <section class="stack results" aria-label="Results">
+      <div class="panel">
+        <button type="button" class="btn primary" id="run">Find best points</button>
+        <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+        <p class="small muted" id="status">Uses every point you have. Takes a few seconds.</p>
+      </div>
+      <div id="results" class="stack"></div>
+    </section>
+  </div>
+</div>
+
+<script id="engine-src">var Engine = (function () {
+'use strict';
+// ---- data.js ----
+// Static game data for the Obelisk Miner Archaeology minigame.
+//
+// Sources:
+//  - Block stats, upgrade tables, skills: https://shminer.miraheze.org/wiki/Archaeology (v2.2.23)
+//  - Spawn tables, boss floors, exact formulas: lobogrande/IoM-Arch-Optimizer-Web (MIT),
+//    which reverse-engineered them from the game and calibrated against real saves.
+//    Armor values use that project's integer-rounded numbers (the wiki lists e.g. 8.25
+//    where the game uses 8).
+
+const RARITIES = ['dirt', 'com', 'rare', 'epic', 'leg', 'myth', 'div'];
+const FRAG_NAMES = ['Dirt', 'Common', 'Rare', 'Epic', 'Legendary', 'Mythic', 'Divine'];
+
+// hp, xp, armor (a), fragment type (ft) and amount (fa) per block id.
+const BLOCKS = {
+  dirt1: { hp: 100, xp: 0.05, a: 0, ft: 0, fa: 0 },
+  com1: { hp: 250, xp: 0.15, a: 5, ft: 1, fa: 0.01 },
+  rare1: { hp: 550, xp: 0.35, a: 12, ft: 2, fa: 0.01 },
+  epic1: { hp: 1150, xp: 1.0, a: 25, ft: 3, fa: 0.01 },
+  leg1: { hp: 1950, xp: 3.5, a: 50, ft: 4, fa: 0.01 },
+  myth1: { hp: 3500, xp: 7.5, a: 150, ft: 5, fa: 0.01 },
+  div1: { hp: 25000, xp: 20.0, a: 300, ft: 6, fa: 0.01 },
+
+  dirt2: { hp: 300, xp: 0.15, a: 0, ft: 0, fa: 0 },
+  com2: { hp: 750, xp: 0.45, a: 8, ft: 1, fa: 0.02 },
+  rare2: { hp: 1650, xp: 1.05, a: 20, ft: 2, fa: 0.02 },
+  epic2: { hp: 3450, xp: 3.0, a: 41, ft: 3, fa: 0.02 },
+  leg2: { hp: 5850, xp: 10.5, a: 83, ft: 4, fa: 0.02 },
+  myth2: { hp: 10500, xp: 22.5, a: 248, ft: 5, fa: 0.02 },
+  div2: { hp: 75000, xp: 60.0, a: 495, ft: 6, fa: 0.02 },
+
+  dirt3: { hp: 900, xp: 0.45, a: 0, ft: 0, fa: 0 },
+  com3: { hp: 2250, xp: 1.35, a: 14, ft: 1, fa: 0.04 },
+  rare3: { hp: 4950, xp: 3.15, a: 33, ft: 2, fa: 0.04 },
+  epic3: { hp: 10350, xp: 9.0, a: 68, ft: 3, fa: 0.04 },
+  leg3: { hp: 17550, xp: 31.5, a: 136, ft: 4, fa: 0.04 },
+  myth3: { hp: 31500, xp: 67.5, a: 408, ft: 5, fa: 0.04 },
+  div3: { hp: 225000, xp: 180.0, a: 817, ft: 6, fa: 0.04 },
+
+  dirt4: { hp: 2700, xp: 1.35, a: 0, ft: 0, fa: 0 },
+  com4: { hp: 6750, xp: 4.05, a: 22, ft: 1, fa: 0.08 },
+  rare4: { hp: 14850, xp: 9.45, a: 54, ft: 2, fa: 0.08 },
+  epic4: { hp: 31050, xp: 27.0, a: 112, ft: 3, fa: 0.08 },
+  leg4: { hp: 52650, xp: 94.5, a: 225, ft: 4, fa: 0.08 },
+  myth4: { hp: 94500, xp: 202.5, a: 674, ft: 5, fa: 0.08 },
+  div4: { hp: 675000, xp: 540.0, a: 1348, ft: 6, fa: 0.08 },
+};
+
+const BLOCK_IDS = Object.keys(BLOCKS);
+
+// Floor at which each rarity reaches tier 1..4.
+const TIER_UNLOCKS = [
+  [1, 12, 24, 81],
+  [1, 18, 30, 96],
+  [3, 26, 36, 111],
+  [6, 30, 42, 126],
+  [12, 32, 45, 136],
+  [20, 35, 50, 141],
+  [50, 75, 100, 150],
+];
+
+// [min floor, 1-in-X spawn chance for dirt..divine]. Each slot rolls divine first,
+// then down to dirt; the first success spawns. If every roll fails the slot is empty.
+const CHANCE_SETS = [
+  [150, [3, 6, 6, 6, 6, 10, 15]],
+  [100, [3, 6, 7, 7, 7, 14, 30]],
+  [70, [3, 6, 7, 7, 8, 17, 40]],
+  [60, [3, 7, 7, 6, 8, 18, 45]],
+  [50, [3, 7, 7, 6, 8, 18, 50]],
+  [30, [3, 7, 9, 7, 8, 20, 21]],
+  [25, [3, 8, 8, 7, 9, 20, 21]],
+  [20, [3, 9, 9, 7, 11, 20, 21]],
+  [15, [3, 9, 9, 8, 13, 20, 21]],
+  [10, [3, 9, 9, 9, 14, 20, 21]],
+  [5, [3, 8, 8, 10, 14, 20, 21]],
+  [1, [3, 7, 9, 10, 14, 20, 21]],
+];
+
+const fill = (id) => Array(24).fill(id);
+const BOSS_COMMON = {
+  11: fill('dirt1'), 17: fill('com1'), 23: fill('dirt2'), 25: fill('rare1'), 29: fill('epic1'),
+  31: fill('leg1'),
+  34: fill('com3').map((b, i) => ([8, 9, 14, 15].includes(i) ? 'myth1' : b)),
+  35: fill('rare2'), 41: fill('epic2'), 44: fill('leg2'),
+  49: [...fill('dirt3').slice(0, 6), ...fill('com3').slice(0, 6), ...fill('rare3').slice(0, 6), ...fill('myth2').slice(0, 6)],
+  74: fill('dirt3').map((b, i) => (i === 20 || i === 21 ? 'div1' : b)),
+  98: fill('myth3'),
+};
+const row99 = (c) => [c, 'rare3', 'epic3', 'leg3', 'myth3', 'div2'];
+// Boss / gauntlet floors replace the random layout with a fixed full grid.
+// Ascension 0 uses the Ascension 1 table (divine blocks downgraded to mythic).
+const BOSS_FLOORS = {
+  asc1: { ...BOSS_COMMON, 99: [0, 1, 2, 3].flatMap(() => row99('com3')) },
+  asc2: {
+    ...BOSS_COMMON,
+    80: fill('dirt3'), 95: fill('com3'),
+    99: [0, 1, 2, 3].flatMap(() => row99('com4')),
+    110: fill('rare3'), 125: fill('epic3'), 135: fill('leg3'), 140: fill('myth3'), 149: fill('div3'),
+  },
+};
+
+// Order in which the miner walks the 4x6 grid (snake pattern).
+const PATH_ORDER = [0, 1, 2, 3, 4, 5, 11, 10, 9, 8, 7, 6, 12, 13, 14, 15, 16, 17, 23, 22, 21, 20, 19, 18];
+
+const STATS = ['Str', 'Agi', 'Per', 'Int', 'Luck', 'Div', 'Corr'];
+const STAT_NAMES = {
+  Str: 'Strength', Agi: 'Agility', Per: 'Perception', Int: 'Intellect', Luck: 'Luck', Div: 'Divinity', Corr: 'Corruption',
+};
+const BASE_STAT_CAPS = { Str: 50, Agi: 50, Per: 25, Int: 25, Luck: 25, Div: 10, Corr: 10 };
+const STAT_MIN_ASC = { Str: 0, Agi: 0, Per: 0, Int: 0, Luck: 0, Div: 1, Corr: 2 };
+
+// Internal upgrades. f/h = per-level value of the first/second effect.
+// asc = ascension needed, stage = highest stage needed to show in the shop.
+const UPGRADES = [
+  { id: 3, name: 'Max Stamina / Stamina Mod Chance (gems)', cap: 50, f: 2, h: 0.0005, asc: 0, stage: 0, gem: true },
+  { id: 4, name: 'Exp Gain / Exp Mod Chance (gems)', cap: 25, f: 0.05, h: 0.0005, asc: 0, stage: 0, gem: true },
+  { id: 5, name: 'Fragment Gain / Loot Mod Chance (gems)', cap: 25, f: 0.02, h: 0.0005, asc: 0, stage: 0, gem: true },
+  { id: 8, name: 'Unlock New Ability (Enrage, Flurry, Quake)', cap: 3, asc: 0, stage: 0 },
+  { id: 9, name: 'Flat Damage +1', cap: 25, f: 1, asc: 0, stage: 0 },
+  { id: 10, name: 'Armor Penetration +1', cap: 25, f: 1, asc: 0, stage: 2 },
+  { id: 11, name: 'Exp Gain +2%', cap: 25, f: 0.02, asc: 0, stage: 3 },
+  { id: 12, name: 'Stat Points +1', cap: 5, f: 1, asc: 1, stage: 4 },
+  { id: 13, name: 'Crit Chance / Crit Damage', cap: 25, f: 0.0025, h: 0.01, asc: 0, stage: 4 },
+  { id: 14, name: 'Max Stamina / Stamina Mod Chance', cap: 20, f: 2, h: 0.0005, asc: 0, stage: 5 },
+  { id: 15, name: 'Flat Damage +2', cap: 20, f: 2, asc: 0, stage: 6 },
+  { id: 16, name: 'Loot Mod Gain +0.3x', cap: 10, f: 0.3, asc: 0, stage: 6 },
+  { id: 17, name: 'Unlock Crosshair Fairy / Armor Pen +3', cap: 15, f: 3, asc: 1, stage: 7 },
+  { id: 18, name: 'Enrage Damage & Crit Dmg / Enrage Cooldown', cap: 15, f: 0.02, h: -1, asc: 0, stage: 7 },
+  { id: 19, name: 'Gleaming Floor Chance', cap: 30, f: 0.001, asc: 2, stage: 8 },
+  { id: 20, name: 'Flat Damage / Super Crit Chance', cap: 25, f: 2, h: 0.0035, asc: 0, stage: 9 },
+  { id: 21, name: 'Exp Gain / Fragment Gain', cap: 20, f: 0.03, h: 0.02, asc: 0, stage: 10 },
+  { id: 22, name: 'Flurry Stamina Gain / Flurry Cooldown', cap: 10, f: 1, h: -1, asc: 0, stage: 11 },
+  { id: 23, name: 'Max Stamina / Stamina Mod Gain', cap: 5, f: 4, h: 1, asc: 0, stage: 12 },
+  { id: 24, name: 'All Mod Chances', cap: 30, f: 0.0002, asc: 1, stage: 12 },
+  { id: 25, name: 'Strength Buff: Flat Damage / Damage', cap: 5, f: 0.2, h: 0.001, asc: 0, stage: 13 },
+  { id: 26, name: 'Agility Buff: Max Stamina / Mod Chance', cap: 5, f: 1, h: 0.0002, asc: 0, stage: 15 },
+  { id: 27, name: 'Unlock Ability Fairy / Loot Mod Gain', cap: 30, f: 0.05, asc: 2, stage: 16 },
+  { id: 28, name: 'Exp Gain / Max Stamina %', cap: 15, f: 0.05, h: 0.01, asc: 0, stage: 17 },
+  { id: 29, name: 'Armor Pen % / Ability Cooldowns', cap: 10, f: 0.02, h: -1, asc: 0, stage: 18 },
+  { id: 30, name: 'Crit Damage / Super Crit Damage', cap: 20, f: 0.02, h: 0.02, asc: 0, stage: 20 },
+  { id: 31, name: 'Quake Attacks / Quake Cooldown', cap: 10, f: 1, h: -2, asc: 0, stage: 20 },
+  { id: 32, name: 'Flat Damage +3 / Enrage Cooldown', cap: 5, f: 3, h: -1, asc: 1, stage: 21 },
+  { id: 33, name: 'Perception Buff: Mod Chance / Armor Pen', cap: 5, f: 0.0001, h: 1, asc: 0, stage: 22 },
+  { id: 34, name: 'Buff Divinity: All Div Stats', cap: 5, f: 0.2, asc: 2, stage: 23 },
+  { id: 35, name: 'Intellect Buff: Exp Gain / Mod Chance', cap: 5, f: 0.01, h: 0.0001, asc: 0, stage: 24 },
+  { id: 36, name: 'Damage / Armor Pen', cap: 20, f: 0.02, h: 3, asc: 0, stage: 26 },
+  { id: 37, name: 'Super Crit / Ultra Crit Chance', cap: 20, f: 0.0035, h: 0.01, asc: 0, stage: 28 },
+  { id: 38, name: 'Exp Mod Gain / Chance', cap: 20, f: 0.1, h: 0.001, asc: 0, stage: 30 },
+  { id: 39, name: 'Ability Instacharge / Max Stamina', cap: 20, f: 0.003, h: 4, asc: 0, stage: 32 },
+  { id: 40, name: 'Ultra Crit Damage / Stamina Mod Chance', cap: 20, f: 0.02, h: 0.0003, asc: 1, stage: 33 },
+  { id: 41, name: 'Polychrome Card Bonus +15%', cap: 1, f: 0.15, asc: 0, stage: 34 },
+  { id: 42, name: 'Fragment Gain x1.25', cap: 1, asc: 0, stage: 36 },
+  { id: 43, name: 'Stamina Mod Gain +2', cap: 1, f: 2, asc: 0, stage: 38 },
+  { id: 44, name: 'All Mod Chances +1.5%', cap: 1, f: 0.015, asc: 0, stage: 40 },
+  { id: 45, name: 'Exp Gain x2 / All Stat Caps +5', cap: 1, f: 2, h: 5, asc: 0, stage: 42 },
+  { id: 46, name: 'Gleaming Floor Multi', cap: 30, f: 0.03, asc: 2, stage: 45 },
+  { id: 47, name: 'Strength Buff: Damage / Crit Damage', cap: 1, f: 0.01, h: 0.01, asc: 1, stage: 50 },
+  { id: 48, name: 'Gold Crosshair / Auto-Tap Chance', cap: 5, f: 0.01, h: 0.01, asc: 1, stage: 55 },
+  { id: 49, name: 'Flat Damage +3 / Ultra Crit Chance', cap: 5, f: 3, h: 0.005, asc: 1, stage: 60 },
+  { id: 50, name: 'Ability Instacharge / Stamina Mod Chance', cap: 25, f: 0.001, h: 0.001, asc: 1, stage: 65 },
+  { id: 51, name: 'Damage / Exp Gain +10%', cap: 5, f: 0.1, h: 0.1, asc: 1, stage: 70 },
+  { id: 52, name: 'Corruption Buff: Damage / Mod Multi', cap: 10, f: 0.002, h: 0.0002, asc: 2, stage: 72 },
+  { id: 53, name: 'Super Crit Damage / Exp Mod Gain', cap: 40, f: 0.005, h: 0.02, asc: 1, stage: 85 },
+  { id: 54, name: 'Max Stamina % / Auto-Tap Chance', cap: 50, f: 0.005, h: 0.002, asc: 1, stage: 90 },
+  { id: 55, name: 'All Mod Multipliers +2%', cap: 10, f: 0.02, asc: 2, stage: 92 },
+];
+const UPGRADE_BY_ID = Object.fromEntries(UPGRADES.map((u) => [u.id, u]));
+
+// Infernal (level 4) card global bonuses: base value per block id.
+// Values marked round are applied as rounded integers.
+const INFERNAL_BONUS = {
+  dirt1: { v: 0.1, text: 'Loot Mod Gain' }, dirt2: { v: 0.12, text: 'Exp Gain' },
+  dirt3: { v: 0.08, text: 'Fragment Gain' }, dirt4: { v: 0.1, text: 'Gleaming Multi' },
+  com1: { v: 0.06, text: 'Crit Dmg' }, com2: { v: 0.07, text: 'Super Crit Dmg' },
+  com3: { v: 0.08, text: 'Ultra Crit Dmg' }, com4: { v: 0.015, text: 'All Crit Chances' },
+  rare1: { v: 0.05, text: 'Auto-Tap Chance' }, rare2: { v: 20, round: true, text: 'Flat Damage' },
+  rare3: { v: 0.4, text: 'Armor Pen Multi' }, rare4: { v: 0.08, text: 'Loot Mod Gain' },
+  epic1: { v: 0.3, text: 'Gold Crosshair Multi' }, epic2: { v: 0.04, text: 'Super Crit Chance' },
+  epic3: { v: 0.05, text: 'Max Stamina Multi' }, epic4: { v: 0.1, text: 'Crit Dmg' },
+  leg1: { v: 0.04, text: 'Fragment Gain' }, leg2: { v: 0.05, text: 'Gold Crosshair Chance' },
+  leg3: { v: 40, round: true, text: 'Flat Armor Pen' }, leg4: { v: 20, round: true, text: 'Flat Max Stamina' },
+  myth1: { v: 0.013, text: 'Gleaming Chance' }, myth2: { v: 0.008, text: 'Loot Mod Chance' },
+  myth3: { v: 0.007, text: 'Stamina Mod Chance' }, myth4: { v: 0.01, text: 'Ability Instacharge' },
+  div1: { v: 0.1, text: 'Damage Multi' }, div2: { v: 0.0125, text: 'Gleaming Chance' },
+  div3: { v: 1, round: true, text: 'Stamina Mod Gain' }, div4: { v: 0.005, text: 'All Mod Chances' },
+};
+
+const CROSSHAIR_INTERVAL = 3.5; // seconds between crosshair spawns
+const BASE_DAMAGE = 10;
+
+// Experience needed to go from level n to n+1.
+const expToNext = (n) => 10 * Math.pow(1.2, n + 1);
+
+function defaultProfile() {
+  return {
+    asc: 0,
+    archLevel: 1,
+    highestFloor: 1,
+    upgrades: Object.fromEntries(UPGRADES.map((u) => [u.id, 0])),
+    ext: {
+      hestia: 0, hades: 0, axolotl: -1, geoduck: 0, avada: false, blockBonker: false,
+      archBundle: false, ascBundle: false, archCard: 0, archCardInfernal: 0,
+      lynx: 0, kromak: false, kromakGilded: 0, wq22: false, challenge14: false, challenge17: false,
+      totalInfernalCards: 0,
+    },
+    cards: Object.fromEntries(BLOCK_IDS.map((b) => [b, 0])),
+  };
+}
+
+// ---- stats.js ----
+// Derived player stats from a profile (ascension, upgrades, externals, cards)
+// and a skill-point allocation. Formulas follow the game's code as reverse-engineered
+// by IoM-Arch-Optimizer-Web, including its rounding quirks.
+
+
+// Python's round(): half to even.
+function roundHalfEven(x) {
+  const r = Math.round(x);
+  return Math.abs(x % 1) === 0.5 && r % 2 !== 0 ? r - 1 : r;
+}
+
+// Python's round(x, 2): correctly rounded on the exact binary value, ties to even.
+function round2(x) {
+  const s = x * 100;
+  if (Number.isInteger(x * 8) && Math.abs(s % 1) === 0.5) return roundHalfEven(s) / 100;
+  return Number(x.toFixed(2));
+}
+
+// GameMaker round(): half away from zero.
+const gmRound = (x) => (x >= 0 ? Math.trunc(x + 0.5) : Math.trunc(x - 0.5));
+
+function statCaps(profile) {
+  const inc = upgradeLevel(profile, 45) ? 5 : 0;
+  const caps = {};
+  for (const [s, c] of Object.entries(BASE_STAT_CAPS)) caps[s] = profile.asc >= STAT_MIN_ASC[s] ? c + inc : 0;
+  return caps;
+}
+
+function statBudget(profile) {
+  return profile.archLevel + (profile.asc >= 1 ? upgradeLevel(profile, 12) : 0);
+}
+
+function upgradeLevel(profile, id) {
+  const u = UPGRADE_BY_ID[id];
+  if (!u || profile.asc < u.asc) return 0;
+  let lvl = Math.max(0, Math.min(profile.upgrades[id] || 0, u.cap));
+  if (u.gem) lvl = Math.min(lvl, profile.archLevel + 4);
+  return lvl;
+}
+
+// Builds the lookup helpers shared by every stat formula.
+function context(profile) {
+  const asc1 = profile.asc >= 1;
+  const asc2 = profile.asc >= 2;
+  const F = (id) => {
+    if (id === 42) return upgradeLevel(profile, 42) ? 1.25 : 1;
+    const u = UPGRADE_BY_ID[id];
+    return u.f === undefined ? 0 : upgradeLevel(profile, id) * u.f;
+  };
+  const H = (id) => {
+    const u = UPGRADE_BY_ID[id];
+    return u.h === undefined ? 0 : upgradeLevel(profile, id) * u.h;
+  };
+
+  const e = profile.ext;
+  const on = (b) => (b ? 1 : 0);
+  const cardInf = { 0: 0, 1: -0.03, 2: -0.06, 3: -0.1 };
+  const W = {
+    hestia: asc1 ? (e.hestia || 0) * 0.0001 : 0,
+    axolotl: (1 + (e.axolotl ?? -1)) * 0.03,
+    geoduck: Math.min(asc2 ? 0.75 : 0.5, (e.geoduck || 0) * 0.0025),
+    avadaDuration: 5 * on(e.avada),
+    avadaCooldown: -10 * on(e.avada),
+    avadaInsta: 0.03 * on(e.avada),
+    bbDamage: 0.01 * on(e.blockBonker),
+    bbStamina: 0.01 * on(e.blockBonker),
+    bbSpeed: 1 * on(e.blockBonker),
+    archBundle: e.archBundle ? 1.25 : 1,
+    ascBundleExp: e.ascBundle ? 1.15 : 1,
+    ascBundleAutoTap: 0.05 * on(e.ascBundle),
+    ascBundleLootMod: 0.02 * on(e.ascBundle),
+    ascBundleGold: 0.02 * on(e.ascBundle),
+    archCard: e.archCard >= 4 ? -Math.abs(e.archCardInfernal || 0) / 100 : cardInf[e.archCard || 0],
+  };
+
+  // Card bonuses and infernal (level 4) global bonuses.
+  const infCards = asc1 ? Object.values(profile.cards).filter((l) => l === 4).length : 0;
+  const hades = asc1 ? (e.hades || 0) * 0.000045 : 0;
+  const infMult = (1 + 0.04 * infCards + 0.002 * (e.totalInfernalCards || 0)) * (1 + hades)
+    * (1 + (e.lynx || 0) * 0.0025) * (1 + (e.kromak ? (e.kromakGilded || 0) * 0.01 : 0))
+    * (e.wq22 ? 1.02 : 1) * (e.challenge17 ? 1.05 : 1);
+  const inf = (id) => {
+    if (!asc1) return 0;
+    if (id.endsWith('4') && !asc2) return 0;
+    return profile.cards[id] === 4 ? INFERNAL_BONUS[id].v * infMult : 0;
+  };
+  const card = (id) => {
+    if (id.endsWith('4') && !asc2) return { hp: 1, exp: 1, loot: 1 };
+    const lvl = profile.cards[id] || 0;
+    if (lvl === 1) return { hp: 0.9, exp: 1.1, loot: 1.1 };
+    if (lvl === 2) return { hp: 0.8, exp: 1.2, loot: 1.2 };
+    if (lvl >= 3) {
+      const b = 0.35 + F(41);
+      return { hp: 1 - b, exp: 1 + b, loot: 1 + b };
+    }
+    return { hp: 1, exp: 1, loot: 1 };
+  };
+  return { asc1, asc2, F, H, W, inf, card, e };
+}
+
+// alloc: { Str, Agi, Per, Int, Luck, Div, Corr } skill points.
+function computeStats(profile, alloc) {
+  const { asc1, asc2, F, H, W, inf, card, e } = context(profile);
+  const S = (k) => {
+    if (k === 'Div' && !asc1) return 0;
+    if (k === 'Corr' && !asc2) return 0;
+    return alloc[k] || 0;
+  };
+  const floorCap = Math.min(100, profile.highestFloor || 0);
+  const modMulti = 1 + F(55) + S('Corr') * (0.01 + H(52));
+
+  const maxSta = roundHalfEven(
+    (100 + F(14) + F(23) + H(39) + F(3) + roundHalfEven(inf('leg4')) + S('Agi') * (5 + F(26)))
+    * (1 + H(28) + F(54)) * (1 - 0.03 * S('Corr'))
+    * (1 + W.bbStamina * floorCap) * (1 + inf('epic3')));
+
+  const flatBase = F(9) + F(15) + F(20) + F(32) + F(49) + roundHalfEven(inf('rare2'))
+    + S('Str') * (1 + F(25)) + S('Div') * (2 + F(34)) + BASE_DAMAGE;
+  const mult1 = 1 + F(51) + F(36) + S('Str') * (0.01 + F(47) + H(25)) + inf('div1');
+  const mult2 = (0.06 + F(52)) * S('Corr');
+  const bbDmg = 1 + W.bbDamage * floorCap;
+  const enrageBonus = 0.2 + F(18);
+  const damage = roundHalfEven(flatBase * (mult1 + mult2) * bbDmg);
+  const enragedDamage = roundHalfEven(flatBase * (mult1 + mult2 + enrageBonus) * bbDmg);
+
+  const armorPen = roundHalfEven(
+    (F(10) + F(17) + H(36) + S('Per') * (2 + H(33)) + roundHalfEven(inf('leg3')))
+    * (1 + 0.03 * S('Int') + F(29)) * (1 + inf('rare3')));
+
+  const critChance = F(13) + 0.02 * S('Luck') + 0.01 * S('Agi') + inf('com4');
+  const critInner = (1 + H(13) + F(30) + (0.03 + H(47)) * S('Str')) * (1 + inf('com1')) * (1 + inf('epic4'));
+  const critDmg = round2(1.5 * critInner);
+  const enragedCritDmg = round2(1.5 * (critInner + (1 + F(18))));
+  const superCritChance = H(20) + F(37) + (0.02 + 0.01 * F(34)) * S('Div') + inf('epic2') + inf('com4');
+  const superCritDmg = superCritChance <= 0 ? 0 : round2(2 * (1 + H(30) + F(53)) * (1 + inf('com2')));
+  const ultraCritChance = H(37) + H(49) + inf('com4');
+  const ultraCritDmg = ultraCritChance <= 0 ? 0 : round2(3 * (1 + F(40)) * (1 + inf('com3')));
+
+  const expGain = round2((1 + F(4) + F(11) + F(21) + F(28) + H(51) + S('Int') * (0.05 + F(35)))
+    * Math.max(1, F(45)) * W.ascBundleExp * (1 + inf('dirt2')));
+  const fragGain = round2((1 + F(5) + H(21) + S('Per') * 0.04)
+    * (1 + W.hestia) * (1 + W.axolotl) * (1 + W.geoduck)
+    * F(42) * W.archBundle * (e.challenge14 ? 1.1 : 1) * (1 + inf('dirt3')) * (1 + inf('leg1')));
+
+  const allMod = F(24) + F(44);
+  const luckMod = 0.002 * S('Luck');
+  const expModChance = H(38) + H(4) + luckMod + (0.003 + H(35)) * S('Int') + allMod + inf('div4');
+  const expModGain = (3 + F(38) + H(53)) * modMulti;
+  const lootModChance = H(5) + allMod + W.ascBundleLootMod + (0.003 + F(33)) * S('Per') + luckMod + inf('myth2') + inf('div4');
+  const lootModGain = (2 + F(16) + F(27)) * modMulti * (1 + inf('dirt1')) * (1 + inf('rare4'));
+  const speedModChance = allMod + (0.002 + H(26)) * S('Agi') + luckMod + inf('div4');
+  const speedModGain = gmRound((10 + 15 * W.bbSpeed) * modMulti);
+  const staModChance = H(3) + H(14) + allMod + H(40) + H(50) + luckMod + inf('myth3') + inf('div4');
+  const staModGain = roundHalfEven((3 + F(43) + H(23) + roundHalfEven(inf('div3'))) * modMulti);
+
+  const div = (0.02 + 0.01 * F(34)) * S('Div');
+  const cdMult = 1 + W.archCard;
+  const abilities = upgradeLevel(profile, 8);
+
+  return {
+    maxSta, damage, enragedDamage, armorPen,
+    critChance, critDmg, enragedCritDmg, superCritChance, superCritDmg, ultraCritChance, ultraCritDmg,
+    expGain, fragGain,
+    expModChance, expModGain, lootModChance, lootModGain,
+    speedModChance, speedModGain, staModChance, staModGain,
+    gleamChance: asc2 ? F(19) + inf('myth1') + inf('div2') : 0,
+    gleamMulti: asc2 ? (3 + F(46)) * (1 + inf('dirt4')) : 1,
+    abilityInsta: W.avadaInsta + F(39) + F(50) + inf('myth4'),
+    autoTap: W.ascBundleAutoTap + H(48) + H(54) + div + inf('rare1'),
+    goldChance: W.ascBundleGold + F(48) + 0.005 * S('Luck') + inf('leg2'),
+    goldMult: round2(3 * (1 + inf('epic1'))),
+    enrage: abilities >= 1 && {
+      charges: 5 + W.avadaDuration,
+      cooldown: Math.ceil(-1e-9 + (60 + H(18) + H(29) + H(32) + W.avadaCooldown) * cdMult),
+    },
+    flurry: abilities >= 2 && {
+      duration: 5 + W.avadaDuration,
+      cooldown: Math.ceil(-1e-9 + (120 + H(22) + H(29) + H(32) + W.avadaCooldown) * cdMult),
+      stamina: 5 + F(22),
+    },
+    quake: abilities >= 3 && {
+      charges: 5 + F(31) + W.avadaDuration,
+      cooldown: Math.ceil(-1e-9 + (180 + H(29) + H(31) + H(32) + W.avadaCooldown) * cdMult),
+      fraction: 0.2,
+    },
+    atkSpeed: profile.atkSpeed || 1,
+    card,
+    asc1, asc2,
+  };
+}
+
+// Final per-block numbers on a given floor (HP after card, XP and fragments after multipliers).
+const FLOOR_STEPS = [100, 150, 200, 250, 300, 300, 350, 400, 450, 500];
+function floorScale(floor) {
+  let hp = 1, armor = 1;
+  for (const s of FLOOR_STEPS) {
+    if (floor < s) continue;
+    hp *= 2;
+    if (s !== 150) armor *= 1.5; // the game skips the armor step at 150 and doubles 300
+  }
+  return { hp, armor };
+}
+
+function blockOnFloor(stats, base, id, floor) {
+  const c = stats.card(id);
+  const sc = floorScale(floor);
+  const rawExp = base.xp * stats.expGain * c.exp;
+  let xp = Math.floor((rawExp + 1e-9) * 1000) / 1000;
+  if (xp > 100) xp = Math.floor(xp + 1e-9);
+  return {
+    id,
+    hp: roundHalfEven(base.hp * sc.hp * c.hp),
+    armor: base.a * sc.armor,
+    xp,
+    frag: Math.floor((base.fa * stats.fragGain * c.loot + 1e-9) * 1000 + 0.5) / 1000,
+    ft: base.ft,
+  };
+}
+
+// ---- floors.js ----
+// Floor layout generation: which block can appear in each slot, and how likely.
+
+
+function tierFor(rarity, floor, asc) {
+  const t = TIER_UNLOCKS[rarity];
+  let tier = floor >= t[3] ? 4 : floor >= t[2] ? 3 : floor >= t[1] ? 2 : 1;
+  if (tier === 4 && asc < 2) tier = 3;
+  return tier;
+}
+
+function fixBossId(id, asc) {
+  if (asc < 1 && id.startsWith('div')) id = id.replace('div', 'myth');
+  return id;
+}
+
+function bossLayout(floor, asc) {
+  const table = asc >= 2 ? BOSS_FLOORS.asc2 : BOSS_FLOORS.asc1;
+  const grid = table[floor];
+  return grid ? grid.map((id) => fixBossId(id, asc)) : null;
+}
+
+// Distribution of a single random slot on a normal floor: [{ id, p }], plus empty chance.
+function slotDistribution(floor, asc) {
+  const chances = CHANCE_SETS.find(([min]) => floor >= min)[1];
+  const out = [];
+  let remaining = 1;
+  for (let r = 6; r >= 0; r--) {
+    if (r === 6 && asc < 1) continue;
+    if (floor < TIER_UNLOCKS[r][0]) continue;
+    const p = remaining / chances[r];
+    out.push({ id: `${RARITIES[r]}${tierFor(r, floor, asc)}`, p });
+    remaining -= p;
+  }
+  return { blocks: out, empty: remaining };
+}
+
+// Per-slot distributions for all 24 slots (indexed by grid slot, not path order).
+const cache = new Map();
+function floorSlots(floor, asc) {
+  const key = floor * 4 + asc;
+  if (cache.has(key)) return cache.get(key);
+  let slots, d;
+  const boss = bossLayout(floor, asc);
+  if (boss) {
+    slots = boss.map((id) => ({ blocks: [{ id, p: 1 }], empty: 0 }));
+  } else {
+    d = slotDistribution(floor, asc);
+    slots = Array(24).fill(d);
+  }
+  slots.key = boss ? `boss${floor}/${asc}` : d.blocks.map((x) => x.id + x.p).join();
+  cache.set(key, slots);
+  return slots;
+}
+
+// Random layout for the Monte Carlo simulator.
+function rollFloor(floor, asc, rng) {
+  const boss = bossLayout(floor, asc);
+  if (boss) return boss.slice();
+  const chances = CHANCE_SETS.find(([min]) => floor >= min)[1];
+  const grid = Array(24).fill(null);
+  for (let i = 0; i < 24; i++) {
+    for (let r = 6; r >= 0; r--) {
+      if (r === 6 && asc < 1) continue;
+      if (floor < TIER_UNLOCKS[r][0]) continue;
+      if (Math.floor(rng() * chances[r]) === 0) {
+        grid[i] = `${RARITIES[r]}${tierFor(r, floor, asc)}`;
+        break;
+      }
+    }
+  }
+  return grid;
+}
+
+const isBlock = (id) => id in BLOCKS;
+
+// ---- model.js ----
+// Analytic run model.
+//
+// A run walks floors slot by slot until stamina runs out. For every block type we
+// compute the exact first three moments of "hits needed to break it" from the
+// crit distribution (renewal recursion over remaining HP). Per slot we mix those
+// over the spawn probabilities, add stamina refunds from mods, and accumulate the
+// cumulants of total stamina spent. The probability that the run is still alive
+// after a given slot is P(spent <= max stamina), evaluated with an Edgeworth
+// (skew-corrected normal) approximation. Expected rewards are each block's
+// rewards times the probability it gets broken.
+//
+// Time-based effects (Enrage, Flurry, Quake, crosshair auto-taps, speed mods)
+// enter as their long-run average rate per hit.
+
+
+const GRID = 2000; // max table length for the hit-count recursion
+const MIN_P = 1e-7;
+
+function normCdf(z) {
+  // Abramowitz-Stegun 7.1.26 via erf, accurate to ~1e-7.
+  const t = 1 / (1 + 0.3275911 * Math.abs(z) / Math.SQRT2);
+  const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t
+    * Math.exp(-z * z / 2);
+  return z >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y);
+}
+const normPdf = (z) => Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+
+// P(X <= x) for X with cumulants k1, k2, k3.
+function cdf(x, k1, k2, k3) {
+  if (k2 <= 1e-12) return x >= k1 ? 1 : 0;
+  const s = Math.sqrt(k2);
+  const z = (x - k1) / s;
+  const g = k3 / (k2 * s);
+  const v = normCdf(z) - normPdf(z) * (g / 6) * (z * z - 1);
+  return Math.min(1, Math.max(0, v));
+}
+
+// Crit outcome table: probabilities and multipliers (normal and enraged).
+function critTable(st) {
+  const c = Math.min(1, Math.max(0, st.critChance));
+  const s = Math.min(1, Math.max(0, st.superCritChance));
+  const u = Math.min(1, Math.max(0, st.ultraCritChance));
+  const p = [1 - c, c * (1 - s), c * s * (1 - u), c * s * u];
+  const m = (base) => [1, base, base * st.superCritDmg, base * st.superCritDmg * st.ultraCritDmg];
+  return { p, m: m(st.critDmg), mE: m(st.enragedCritDmg) };
+}
+
+// Average per-hit rates of the time-based effects, given the share of hits under speed mods.
+function rates(st, speedShare) {
+  const insta = Math.min(0.99, Math.max(0, st.abilityInsta));
+  const perSec = (a, amount) => (a ? amount / ((1 - insta) * Math.max(1, a.cooldown)) : 0);
+  const flurryTime = st.flurry ? Math.min(1, perSec(st.flurry, st.flurry.duration)) : 0;
+  const hitsPerSec = (st.atkSpeed || 1) / (1 - 0.5 * speedShare) * (1 + flurryTime);
+  const tau = 1 / hitsPerSec;
+  return {
+    tau,
+    enrage: Math.min(1, perSec(st.enrage, st.enrage && st.enrage.charges) * tau),
+    // Quake charges are spent on consecutive hits: a window of `quakeWindow` hits
+    // opens once every `quakeCycle` hits.
+    quakeWindow: st.quake ? st.quake.charges / (1 - insta) : 0,
+    quakeCycle: st.quake ? Math.max(1, st.quake.cooldown) / tau : Infinity,
+    flurrySta: perSec(st.flurry, st.flurry && st.flurry.stamina) * tau,
+    crosshairs: tau / CROSSHAIR_INTERVAL,
+  };
+}
+
+// Distribution of the number of Quake procs among the first `h` hits of a floor,
+// with the Quake window starting at a uniformly random point of its cycle.
+// Returns [[procs, prob], ...] with at most ~16 distinct values.
+function quakeProcs(h, win, cycle) {
+  if (win <= 0 || h <= 0) return [[0, 1]];
+  if (win >= cycle) return [[h, 1]];
+  // Every full cycle contributes exactly one window; only the remainder is random.
+  const full = Math.floor(h / cycle), r = h - full * cycle;
+  const n = Math.min(400, Math.ceil(cycle));
+  const step = cycle / n;
+  const counts = new Map();
+  for (let i = 0; i < n; i++) {
+    const s = (i + 0.5) * step;
+    let q = full * win;
+    for (let k = -1; k <= 1; k++) {
+      const a = Math.max(0, s + k * cycle), b = Math.min(r, s + k * cycle + win);
+      if (b > a) q += b - a;
+    }
+    const key = Math.round(q * 4) / 4;
+    counts.set(key, (counts.get(key) || 0) + 1 / n);
+  }
+  return [...counts.entries()];
+}
+
+// Damage model against one armor value: per-hit damage outcomes (melee plus a
+// possible crosshair auto-tap landing during that hit) and expected Quake damage.
+function damageProfile(st, ct, rt, armor) {
+  const effA = Math.max(0, armor - st.armorPen);
+  const fE = rt.enrage;
+  const g = Math.min(1, st.goldChance);
+  const tap = Math.min(1, rt.crosshairs * Math.min(1, st.autoTap));
+  const steps = []; // [damage, prob]
+  let quake = 0;
+  for (const [D, mult, w] of [[st.damage, ct.m, 1 - fE], [st.enragedDamage, ct.mE, fE]]) {
+    if (w <= 0) continue;
+    let tapDmg = (1 - g) * Math.max(1, D - effA);
+    for (let k = 0; k < 4; k++) tapDmg += g * ct.p[k] * Math.max(1, (D - effA) * st.goldMult * mult[k]);
+    for (let k = 0; k < 4; k++) {
+      const pk = ct.p[k] * w;
+      if (pk <= 0) continue;
+      const d = Math.max(1, (D - effA) * mult[k]);
+      steps.push([d, pk * (1 - tap)]);
+      if (tap > 0) steps.push([d + tapDmg, pk * tap]);
+      quake += pk * Math.max(1, (D * 0.2 - effA) * mult[k]);
+    }
+  }
+  return { steps, quake };
+}
+
+// Moments of N(h) = hits needed to deal h damage, for all h up to hpMax.
+function hitTable(steps, hpMax, grid = GRID) {
+  let mu = 0, m2 = 0, dmin = Infinity;
+  for (const [d, p] of steps) { mu += p * d; m2 += p * d * d; dmin = Math.min(dmin, d); }
+  const delta = Math.max(hpMax / grid, dmin / 16);
+  if (delta > dmin) {
+    // Too many hits for the table: renewal-theory asymptotics.
+    let c3 = 0;
+    for (const [d, p] of steps) c3 += p * (d - mu) ** 3;
+    const v = m2 - mu * mu;
+    return {
+      at(h, out) {
+        if (h <= 0) { out[0] = out[1] = out[2] = 0; return; }
+        const k1 = h / mu + m2 / (2 * mu * mu) - 0.5;
+        const k2 = Math.max(0, h * v / mu ** 3);
+        const k3 = h * (3 * v * v / mu ** 5 - c3 / mu ** 4);
+        out[0] = k1; out[1] = k2 + k1 * k1; out[2] = k3 + 3 * k1 * k2 + k1 ** 3;
+      },
+    };
+  }
+  const n = Math.ceil(hpMax / delta) + 1;
+  const u1 = new Float64Array(n), u2 = new Float64Array(n), u3 = new Float64Array(n);
+  const sd = steps.map(([d, p]) => [Math.max(1, Math.round(d / delta)), p]);
+  for (let i = 1; i < n; i++) {
+    let a = 1, b = 1, c = 1;
+    for (const [s, p] of sd) {
+      const j = i - s;
+      if (j <= 0) continue;
+      const x1 = u1[j], x2 = u2[j], x3 = u3[j];
+      a += p * x1;
+      b += p * (2 * x1 + x2);
+      c += p * (3 * x1 + 3 * x2 + x3);
+    }
+    u1[i] = a; u2[i] = b; u3[i] = c;
+  }
+  return {
+    at(h, out) {
+      if (h <= 0) { out[0] = out[1] = out[2] = 0; return; }
+      const i = Math.min(n - 1, Math.ceil(h / delta - 1e-9));
+      out[0] = u1[i]; out[1] = u2[i]; out[2] = u3[i];
+    },
+  };
+}
+
+/**
+ * Evaluate a stat sheet over one run.
+ * Returns expected rewards plus reach[f] = P(run reaches floor f).
+ */
+function evaluateRun(st, asc, opts = {}) {
+  const maxFloor = opts.maxFloor || 1000;
+  const ct = critTable(st);
+  const speedPerKill = Math.min(1, st.speedModChance) * st.speedModGain;
+  const needsSpeed = speedPerKill > 0 && (st.enrage || st.flurry || st.quake || st.autoTap > 0);
+  let speedShare = 0;
+  let res;
+  for (let pass = 0; pass < (needsSpeed ? 2 : 1); pass++) {
+    res = runOnce(st, asc, ct, rates(st, speedShare), maxFloor, opts);
+    speedShare = Math.min(1, speedPerKill * res.kills / Math.max(1, res.hits));
+  }
+  return res;
+}
+
+// Discretizes a distribution with cumulants (k1, k2, k3) onto integer offsets,
+// preserving the mean exactly. Returns { lo, w } with w[i] = P(offset = lo + i).
+function kernel(k1, k2, k3, range) {
+  const s = Math.sqrt(Math.max(0, k2));
+  if (s < 0.05) {
+    const lo = Math.floor(k1), fr = k1 - lo;
+    return { lo, w: [1 - fr, fr] };
+  }
+  // Offsets beyond +-range all mean the same thing (dead / back at the cap),
+  // so the tails are lumped into the end bins.
+  const lo = Math.max(-range - 1, Math.floor(k1 - 6 * s) - 1);
+  const hi = Math.min(range + 1, Math.ceil(k1 + 6 * s) + 1);
+  const clipped = lo === -range - 1 || hi === range + 1;
+  const w = [];
+  let prev = 0, tot = 0, mean = 0;
+  for (let j = lo; j <= hi; j++) {
+    const c = j === hi ? 1 : Math.max(prev, cdf(j + 0.5, k1, k2, k3));
+    w.push(c - prev);
+    tot += c - prev;
+    mean += (c - prev) * j;
+    prev = c;
+  }
+  for (let i = 0; i < w.length; i++) w[i] /= tot;
+  // Shift a fraction of the mass by one step to restore the exact mean.
+  const d = k1 - mean / tot;
+  if (!clipped && Math.abs(d) > 1e-12) {
+    const out = new Array(w.length + 1).fill(0);
+    const a = Math.min(1, Math.abs(d));
+    for (let i = 0; i < w.length; i++) {
+      if (d > 0) { out[i] += w[i] * (1 - a); out[i + 1] += w[i] * a; } else { out[i + 1] += w[i] * (1 - a); out[i] += w[i] * a; }
+    }
+    return { lo: d > 0 ? lo : lo - 1, w: out };
+  }
+  return { lo, w };
+}
+
+function runOnce(st, asc, ct, rt, maxFloor, opts) {
+  const trace = opts.trace;
+  const fast = !!opts.fast;
+  const staCh = Math.min(1, st.staModChance), G = st.staModGain;
+  const r1 = staCh * G, r2 = staCh * G * G, r3 = staCh * G ** 3;
+  const a = 1 - rt.flurrySta;
+  const expFactor = 1 + Math.min(1, st.expModChance) * (st.expModGain - 1);
+  const lootFactor = 1 + Math.min(1, st.lootModChance) * (st.lootModGain - 1);
+  const gleam = 1 + Math.min(1, st.gleamChance) * (st.gleamMulti - 1);
+
+  // Stamina is tracked as a distribution over buckets of width `unit`, capped at
+  // max stamina between floors (refills above the cap are lost, as in the game).
+  const S = st.maxSta;
+  const B = Math.min(S, fast ? 120 : 250);
+  const unit = S / B;
+  let pmf = new Float64Array(B + 1);
+  pmf[B] = 1;
+  let lowB = B; // lowest bucket holding mass
+
+  // Per (block id, floor scale) cache of block numbers, damage profile and hit table.
+  const groups = new Map();
+  const group = (id, floor) => {
+    const sc = floorScale(floor);
+    const key = `${id}@${sc.hp}/${sc.armor}`;
+    let g = groups.get(key);
+    if (!g) {
+      const b = blockOnFloor(st, BLOCKS[id], id, floor);
+      const dp = damageProfile(st, ct, rt, b.armor);
+      g = { b, quake: dp.quake, table: hitTable(dp.steps, b.hp, fast ? 500 : GRID) };
+      groups.set(key, g);
+    }
+    return g;
+  };
+
+  // P(stamina - cost > 0) where cost has cumulants (k1, k2, k3) from floor start.
+  // Only buckets within a few sd of the cost need the CDF; the rest are 0 or 1.
+  let prefix = new Float64Array(B + 2); // prefix[b] = mass in buckets b..B
+  const setPrefix = () => {
+    prefix = new Float64Array(B + 2);
+    for (let b = B; b >= 1; b--) prefix[b] = prefix[b + 1] + pmf[b];
+  };
+  setPrefix();
+  const survive = (k1, k2, k3) => {
+    const sd = Math.sqrt(Math.max(0, k2));
+    const lo = Math.max(1, Math.floor((k1 - 9 * sd - 1) / unit));
+    const hi = Math.min(B, Math.ceil((k1 + 9 * sd + 1) / unit));
+    if (lo > B) return 0;
+    let p = prefix[hi + 1];
+    for (let b = lo; b <= hi; b++) {
+      const m = pmf[b];
+      if (m < 1e-14) continue;
+      p += m * cdf(b * unit + 0.5, k1, k2, k3);
+    }
+    return p;
+  };
+  const mom = new Float64Array(3);
+  const quakeCache = new Map();
+  const quakeAt = (h) => {
+    const q = h < 64 ? 0.25 : h / 256; // relative precision for long floors
+    const key = Math.round(h / q) * q;
+    let v = quakeCache.get(key);
+    if (!v) { v = quakeProcs(key, rt.quakeWindow, rt.quakeCycle); quakeCache.set(key, v); }
+    return v;
+  };
+
+  const reach = [1, 1]; // reach[f] = P(run reaches floor f)
+  const frags = [0, 0, 0, 0, 0, 0, 0];
+  let xp = 0, hits = 0, kills = 0, time = 0, blocks = 0;
+  let capped = false;
+
+  // Per-slot cost cumulants only depend on the floor's layout table and scaling,
+  // so floors sharing both are computed once.
+  const floorCache = new Map();
+  const floorPlan = (f) => {
+    const slots = floorSlots(f, asc);
+    const sc = floorScale(f);
+    const key = slots.key + sc.hp + '/' + sc.armor;
+    let plan = floorCache.get(key);
+    if (plan) return plan;
+    plan = [];
+    let floorHits = 0, K1 = 0, K2 = 0, K3 = 0;
+    for (const idx of PATH_ORDER) {
+      const slot = slots[idx];
+      if (slot.empty >= 1) continue;
+      let e1 = 0, e2 = 0, e3 = 0, slotHits = 0, sxp = 0;
+      const sfrag = [0, 0, 0, 0, 0, 0, 0];
+      const qd = quakeAt(floorHits);
+      for (const { id, p } of slot.blocks) {
+        const g = group(id, f);
+        let m1 = 0, m2 = 0, m3 = 0;
+        for (let i = 0; i < qd.length; i++) {
+          const pq = qd[i][1];
+          g.table.at(g.b.hp - qd[i][0] * g.quake, mom);
+          m1 += pq * mom[0]; m2 += pq * mom[1]; m3 += pq * mom[2];
+        }
+        e1 += p * (a * m1 - r1);
+        e2 += p * (a * a * m2 - 2 * a * m1 * r1 + r2);
+        e3 += p * (a ** 3 * m3 - 3 * a * a * m2 * r1 + 3 * a * m1 * r2 - r3);
+        slotHits += p * m1;
+        sxp += p * g.b.xp;
+        sfrag[g.b.ft] += p * g.b.frag;
+      }
+      K1 += e1;
+      K2 += Math.max(0, e2 - e1 * e1);
+      K3 += e3 - 3 * e1 * e2 + 2 * e1 ** 3;
+      floorHits += slotHits;
+      plan.push({ K1, K2, K3, slotHits, xp: sxp, frag: sfrag, filled: 1 - slot.empty });
+    }
+    floorCache.set(key, plan);
+    return plan;
+  };
+
+  for (let f = 1; f <= maxFloor; f++) {
+    const plan = floorPlan(f);
+    let alive = reach[f];
+    for (const sl of plan) {
+      // The stamina refill from a mod arrives after the kill, so the block
+      // is broken if stamina covers its cost before that refill.
+      const killed = Math.min(alive, survive(sl.K1 + r1, sl.K2, sl.K3));
+      const w = killed * gleam;
+      xp += w * sl.xp * expFactor;
+      for (let t = 0; t < 7; t++) frags[t] += w * sl.frag[t] * lootFactor;
+      kills += sl.filled * killed;
+      blocks += sl.filled * killed;
+      hits += sl.slotHits * alive;
+      time += sl.slotHits * alive * rt.tau;
+      alive = killed;
+    }
+    const last = plan[plan.length - 1] || { K1: 0, K2: 0, K3: 0, slotHits: 0 };
+    const K1 = last.K1, K2 = last.K2, K3 = last.K3;
+    const floorHits = plan.reduce((x, sl) => x + sl.slotHits, 0);
+
+    if (trace) trace[f] = { cost: K1, sd: Math.sqrt(K2), hits: floorHits };
+    // Move the stamina distribution through the floor.
+    const kr = kernel(K1 / unit, K2 / (unit * unit), K3 / unit ** 3, B);
+    const next = new Float64Array(B + 1);
+    for (let b = lowB; b <= B; b++) {
+      const m = pmf[b];
+      if (m < 1e-14) continue;
+      for (let i = 0; i < kr.w.length; i++) {
+        const nb = b - (kr.lo + i);
+        if (nb <= 0) continue;
+        next[nb > B ? B : nb] += m * kr.w[i];
+      }
+    }
+    lowB = 1;
+    while (lowB <= B && next[lowB] < 1e-14) lowB++;
+    pmf = next;
+    setPrefix();
+    let mass = 0;
+    for (let b = 1; b <= B; b++) mass += pmf[b];
+    const done = Math.min(reach[f], mass);
+    reach[f + 1] = done;
+    if (done < MIN_P) break;
+    if (f === maxFloor) capped = true;
+  }
+  return { reach, xp, frags, hits, kills, time, blocks, capped, rates: rt };
+}
+
+// Expected highest floor = sum over f >= 1 of P(reach f).
+function expectedFloor(reach) {
+  let s = 0;
+  for (let f = 1; f < reach.length; f++) s += reach[f];
+  return s;
+}
+
+// Highest floor reached with probability >= q, with a fractional part that
+// interpolates toward the next floor (keeps the optimizer's objective smooth).
+function floorAtChance(reach, q) {
+  let F = 1;
+  while (F + 1 < reach.length && reach[F + 1] >= q) F++;
+  const pF = reach[F], pN = reach[F + 1] || 0;
+  const frac = pF > pN ? Math.min(0.999, Math.max(0, (pF - q) / (pF - pN))) : 0;
+  return { floor: F, score: F + frac };
+}
+
+// ---- sim.js ----
+// Hit-by-hit Monte Carlo simulator, a direct port of the reference combat loop.
+// Used to cross-check the analytic model.
+
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function simulateRun(st, asc, rng, maxFloor = 1000, trace = null) {
+  const blockCache = new Map();
+  const blockAt = (id, f) => {
+    const key = `${id}@${f}`;
+    let b = blockCache.get(key);
+    if (!b) { b = blockOnFloor(st, BLOCKS[id], id, f); blockCache.set(key, b); }
+    return b;
+  };
+  const roll = (c) => {
+    if (rng() < st.critChance) {
+      const base = c ? st.enragedCritDmg : st.critDmg;
+      if (rng() < st.superCritChance) {
+        if (rng() < st.ultraCritChance) return base * st.superCritDmg * st.ultraCritDmg;
+        return base * st.superCritDmg;
+      }
+      return base;
+    }
+    return 1;
+  };
+
+  let stamina = st.maxSta, speedPool = 0, crossTimer = 0, time = 0;
+  let xp = 0, hits = 0, kills = 0;
+  const frags = [0, 0, 0, 0, 0, 0, 0];
+  const insta = st.abilityInsta;
+  const sk = {
+    eCd: 0, eCh: 0, fCd: 0, fT: 0, qCd: 0, qCh: 0,
+  };
+  const tick = (dt) => {
+    let staGain = 0;
+    if (sk.eCd > 0) sk.eCd -= dt;
+    if (sk.fCd > 0) sk.fCd -= dt;
+    if (sk.qCd > 0) sk.qCd -= dt;
+    if (sk.fT > 0) sk.fT = Math.max(0, sk.fT - dt);
+    const cast = (a, cdKey, fn) => {
+      let chain = 0;
+      while (sk[cdKey] <= 0 && chain < 100) {
+        fn();
+        sk[cdKey] = a.cooldown;
+        if (rng() < insta) { sk[cdKey] = 0; chain++; } else break;
+      }
+    };
+    if (st.enrage) cast(st.enrage, 'eCd', () => { sk.eCh += st.enrage.charges; });
+    if (st.flurry) cast(st.flurry, 'fCd', () => { sk.fT += st.flurry.duration; staGain += st.flurry.stamina; });
+    if (st.quake) cast(st.quake, 'qCd', () => { sk.qCh += st.quake.charges; });
+    return staGain;
+  };
+
+  let floor = 1;
+  for (; floor <= maxFloor && stamina > 0; floor++) {
+    const staStart = stamina, hitsStart = hits;
+    const ids = rollFloor(floor, asc, rng);
+    const gleam = rng() < st.gleamChance ? st.gleamMulti : 1;
+    const grid = ids.map((id) => {
+      if (!id) return null;
+      const b = blockAt(id, floor);
+      return {
+        b, hp: b.hp,
+        exp: rng() < st.expModChance ? st.expModGain : 1,
+        loot: rng() < st.lootModChance ? st.lootModGain : 1,
+        sta: rng() < st.staModChance ? st.staModGain : 0,
+        speed: rng() < st.speedModChance,
+      };
+    });
+    const reward = (blk) => {
+      xp += blk.b.xp * blk.exp * gleam;
+      frags[blk.b.ft] += blk.b.frag * blk.loot * gleam;
+      if (blk.sta > 0) stamina = Math.min(st.maxSta, stamina + blk.sta);
+      if (blk.speed) speedPool += st.speedModGain;
+      kills++;
+    };
+    for (let i = 0; i < 24; i++) {
+      if (stamina <= 0) break;
+      const t = grid[PATH_ORDER[i]];
+      if (!t || t.hp <= 0) continue;
+      while (t.hp > 0 && stamina > 0) {
+        const enr = sk.eCh > 0;
+        const fm = sk.fT > 0 ? 2 : 1;
+        let spd = fm;
+        if (speedPool > 0) { spd *= 2; speedPool--; }
+        const dt = 1 / (spd * (st.atkSpeed || 1));
+        time += dt;
+        crossTimer += dt;
+        while (crossTimer >= CROSSHAIR_INTERVAL) {
+          crossTimer -= CROSSHAIR_INTERVAL;
+          if (rng() < st.autoTap) {
+            const D = enr ? st.enragedDamage : st.damage;
+            const effA = Math.max(0, t.b.armor - st.armorPen);
+            const dmg = rng() < st.goldChance
+              ? Math.max(1, (D - effA) * st.goldMult * roll(enr))
+              : Math.max(1, D - effA);
+            t.hp -= dmg;
+          }
+        }
+        if (t.hp <= 0) break;
+        const sg = tick(dt);
+        if (sg > 0) stamina = Math.min(st.maxSta, stamina + sg);
+        const c = roll(enr);
+        const D = enr ? st.enragedDamage : st.damage;
+        const effA = Math.max(0, t.b.armor - st.armorPen);
+        t.hp -= Math.max(1, (D - effA) * c);
+        stamina -= 1;
+        hits++;
+        if (sk.eCh > 0) sk.eCh--;
+        if (sk.qCh > 0) {
+          sk.qCh--;
+          const q = D * 0.2;
+          for (const j of PATH_ORDER.slice(i + 1)) {
+            const o = grid[j];
+            if (!o || o.hp <= 0) continue;
+            const oa = Math.max(0, o.b.armor - st.armorPen);
+            o.hp -= Math.max(1, (q - oa) * roll(enr));
+            if (o.hp <= 0) reward(o);
+          }
+        }
+      }
+      if (t.hp <= 0) reward(t);
+    }
+    if (stamina <= 0) break;
+    if (trace) {
+      const t = trace[floor] || (trace[floor] = { n: 0, cost: 0, hits: 0 });
+      t.n++; t.cost += staStart - stamina; t.hits += hits - hitsStart;
+    }
+  }
+  return { floor: Math.min(floor, maxFloor), xp, frags, hits, kills, time };
+}
+
+// Runs n simulations; returns averages and reach[f] = share of runs reaching floor f.
+function simulate(st, asc, n, seed = 1, maxFloor = 1000) {
+  const rng = mulberry32(seed);
+  const counts = [];
+  const frags = [0, 0, 0, 0, 0, 0, 0];
+  let xp = 0, floorSum = 0, time = 0, hits = 0;
+  for (let r = 0; r < n; r++) {
+    const res = simulateRun(st, asc, rng, maxFloor);
+    counts[res.floor] = (counts[res.floor] || 0) + 1;
+    xp += res.xp; floorSum += res.floor; time += res.time; hits += res.hits;
+    res.frags.forEach((v, i) => { frags[i] += v; });
+  }
+  const top = counts.length;
+  const reach = Array(top + 1).fill(0);
+  let acc = 0;
+  for (let f = top - 1; f >= 1; f--) { acc += counts[f] || 0; reach[f] = acc / n; }
+  reach[0] = 1;
+  return {
+    n, reach, expFloor: floorSum / n, xp: xp / n, time: time / n, hits: hits / n,
+    frags: frags.map((v) => v / n),
+  };
+}
+
+// ---- optimizer.js ----
+// Skill point optimizer: coarse grid over the allowed allocations, then a
+// pairwise-transfer hill climb from the best grid points with shrinking step size.
+
+
+const GOALS = {
+  frags: 'Fragments per run',
+  xp: 'Experience per run',
+  floorChance: 'Highest floor reached with chance',
+  expFloor: 'Expected highest floor',
+};
+
+// Scalar objective for a model result. Higher is better.
+function score(goal, res) {
+  const per = goal.perHour ? 3600 / Math.max(1, res.time) : 1;
+  switch (goal.type) {
+    case 'frags': return res.frags.reduce((s, v, i) => s + v * (goal.weights ? goal.weights[i] : 1), 0) * per;
+    case 'xp': return res.xp * per;
+    case 'expFloor': return expectedFloor(res.reach);
+    default: return floorAtChance(res.reach, goal.chance ?? 0.05).score;
+  }
+}
+
+function summarize(goal, res) {
+  const q = goal.chance ?? 0.05;
+  return {
+    xp: res.xp,
+    frags: res.frags,
+    time: res.time,
+    hits: res.hits,
+    expFloor: expectedFloor(res.reach),
+    floorAtChance: floorAtChance(res.reach, q).floor,
+    median: floorAtChance(res.reach, 0.5).floor,
+    reach: res.reach,
+    capped: res.capped,
+  };
+}
+
+function evaluateAlloc(profile, alloc, goal, fast) {
+  const st = computeStats(profile, alloc);
+  const res = evaluateRun(st, profile.asc, { fast });
+  return { score: score(goal, res), res, st };
+}
+
+// Dimensions the optimizer may move points between, with bounds.
+function searchSpace(profile, limits = {}) {
+  const caps = statCaps(profile);
+  const B = statBudget(profile);
+  const dims = [];
+  for (const s of STATS) {
+    if (caps[s] <= 0) continue;
+    const l = limits[s] || {};
+    const lo = Math.max(0, Math.min(caps[s], l.min ?? 0));
+    const hi = Math.max(lo, Math.min(caps[s], l.max ?? caps[s]));
+    dims.push({ stat: s, lo, hi });
+  }
+  // Points may stay unspent (useful only if every stat is capped).
+  dims.push({ stat: 'Unspent', lo: 0, hi: B });
+  return { dims, budget: B };
+}
+
+const keyOf = (v) => v.join(',');
+const toAlloc = (dims, v) => Object.fromEntries(dims.map((d, i) => [d.stat, v[i]]));
+
+// All grid points with step s (plus bounds), spending the full budget.
+// Returns null as soon as more than `limit` points would be produced.
+function grid(dims, B, s, limit) {
+  const out = [];
+  let over = false;
+  const n = dims.length - 1; // last dim is Unspent
+  const v = new Array(dims.length).fill(0);
+  const n0 = dims.slice(0, n);
+  const rec = (i, left) => {
+    if (over) return;
+    if (i === n) {
+      if (left > dims[n].hi) return;
+      // Leaving points unspent only makes sense when nothing else can take them.
+      if (left >= s && !n0.every((d, k) => v[k] === d.hi)) return;
+      v[n] = left;
+      out.push(v.slice());
+      if (out.length > limit) over = true;
+      return;
+    }
+    const { lo, hi } = dims[i];
+    const vals = new Set([lo, Math.min(hi, left)]);
+    for (let x = Math.ceil(lo / s) * s; x <= Math.min(hi, left); x += s) vals.add(x);
+    for (const x of vals) {
+      if (x > left) continue;
+      v[i] = x;
+      rec(i + 1, left - x);
+    }
+  };
+  rec(0, B);
+  return over ? null : out;
+}
+
+/**
+ * evalBatch(allocs[]) -> Promise<number[]> scores (allows parallel workers).
+ * onProgress({ phase, done, best }) is called as the search advances.
+ */
+async function optimize({ profile, limits, start, evalBatch, onProgress = () => {}, topK = 3 }) {
+  const { dims, budget: B } = searchSpace(profile, limits);
+  const minSum = dims.reduce((s, d) => s + d.lo, 0);
+  if (minSum > B) throw new Error(`Minimum limits need ${minSum} points but only ${B} are available.`);
+
+  const cache = new Map();
+  let evals = 0;
+  const run = async (vs) => {
+    const todo = vs.filter((v) => !cache.has(keyOf(v)));
+    const uniq = [...new Map(todo.map((v) => [keyOf(v), v])).values()];
+    if (uniq.length) {
+      const scores = await evalBatch(uniq.map((v) => toAlloc(dims, v)));
+      uniq.forEach((v, i) => cache.set(keyOf(v), scores[i]));
+      evals += uniq.length;
+    }
+    return vs.map((v) => cache.get(keyOf(v)));
+  };
+  const best = () => [...cache.entries()].sort((a, b) => b[1] - a[1])[0];
+
+  // Phase 1: coarse grid with a step that keeps it to a few hundred points.
+  let step = 1, pts;
+  while (!(pts = grid(dims, B, step, 400))) step++;
+  const seeds = [];
+  if (start) {
+    const v = dims.map((d) => Math.min(d.hi, Math.max(d.lo, start[d.stat] || 0)));
+    const used = v.slice(0, -1).reduce((a, b) => a + b, 0);
+    v[v.length - 1] = 0;
+    if (used <= B) {
+      // Put leftover points into the first stat with room, else leave unspent.
+      let left = B - used;
+      for (let i = 0; i < v.length - 1 && left > 0; i++) {
+        const add = Math.min(left, dims[i].hi - v[i]);
+        v[i] += add; left -= add;
+      }
+      v[v.length - 1] = left;
+      seeds.push(v);
+    }
+  }
+  const scores = await run([...seeds, ...pts]);
+  onProgress({ phase: 'grid', evals, best: best() });
+
+  // Phase 2: hill climb from the best distinct grid points.
+  const ranked = [...seeds, ...pts].map((v, i) => [v, scores[i]]).sort((a, b) => b[1] - a[1]);
+  const starts = [];
+  for (const [v] of ranked) {
+    if (starts.length >= topK) break;
+    if (starts.some((u) => u.reduce((s, x, i) => s + Math.abs(x - v[i]), 0) < 2 * step)) continue;
+    starts.push(v);
+  }
+  const results = [];
+  for (const s0 of starts) {
+    let cur = s0, curScore = cache.get(keyOf(s0));
+    for (let d = Math.max(1, Math.ceil(step / 2)); d >= 1; d = d === 1 ? 0 : Math.max(1, Math.floor(d / 2))) {
+      for (;;) {
+        const moves = [];
+        for (let i = 0; i < dims.length; i++) {
+          for (let j = 0; j < dims.length; j++) {
+            if (i === j) continue;
+            const amt = Math.min(d, cur[i] - dims[i].lo, dims[j].hi - cur[j]);
+            if (amt <= 0) continue;
+            const v = cur.slice();
+            v[i] -= amt; v[j] += amt;
+            moves.push(v);
+          }
+        }
+        const ms = await run(moves);
+        let bi = -1;
+        ms.forEach((sc, k) => { if (sc > curScore + 1e-9 && (bi < 0 || sc > ms[bi])) bi = k; });
+        onProgress({ phase: 'climb', evals, best: best() });
+        if (bi < 0) break;
+        cur = moves[bi]; curScore = ms[bi];
+      }
+    }
+    results.push([cur, curScore]);
+  }
+
+  const seen = new Set();
+  const top = [...cache.entries()].sort((a, b) => b[1] - a[1])
+    .filter(([k]) => (seen.has(k) ? false : seen.add(k)))
+    .slice(0, 8)
+    .map(([k, sc]) => ({ alloc: toAlloc(dims, k.split(',').map(Number)), score: sc }));
+  return { top, evals, dims: dims.map((d) => d.stat) };
+}
+
+// ---- presets.js ----
+// Example profiles. "screenshot" was rebuilt from in-game screenshots (Asc 1,
+// Arch level 100) and reproduces every number on that player's stats page.
+
+
+function screenshotPreset() {
+  const p = defaultProfile();
+  p.asc = 1;
+  p.archLevel = 100;
+  p.highestFloor = 145;
+  p.atkSpeed = 2;
+  Object.assign(p.upgrades, {
+    3: 50, 4: 25, 5: 25, 8: 3, 9: 25, 10: 25, 11: 25, 12: 5, 13: 25, 14: 20, 15: 20, 16: 10,
+    17: 15, 18: 15, 20: 25, 21: 20, 22: 10, 23: 5, 24: 30, 25: 5, 26: 5, 28: 15, 29: 10, 30: 20,
+    31: 10, 32: 5, 33: 5, 35: 5, 36: 20, 37: 20, 38: 20, 39: 20, 40: 20, 41: 1, 42: 1, 43: 1,
+    44: 1, 45: 1, 47: 1, 48: 5, 49: 5, 50: 25, 51: 5, 53: 33, 54: 27,
+  });
+  // Fragment-gain externals are not visible on the stats page; these values
+  // reproduce its 6.91x total and can be replaced with the real ones.
+  Object.assign(p.ext, { avada: true, blockBonker: true, geoduck: 200, axolotl: 5, hestia: 80 });
+  for (const id of BLOCK_IDS) if (!id.endsWith('4')) p.cards[id] = 3;
+  return { profile: p, alloc: { Str: 0, Agi: 0, Per: 30, Int: 30, Luck: 30, Div: 15, Corr: 0 } };
+}
+
+
+return { RARITIES, FRAG_NAMES, BLOCKS, BLOCK_IDS, TIER_UNLOCKS, CHANCE_SETS, BOSS_FLOORS, PATH_ORDER, STATS, STAT_NAMES, BASE_STAT_CAPS, STAT_MIN_ASC, UPGRADES, UPGRADE_BY_ID, INFERNAL_BONUS, CROSSHAIR_INTERVAL, BASE_DAMAGE, expToNext, defaultProfile, roundHalfEven, round2, statCaps, statBudget, upgradeLevel, computeStats, floorScale, blockOnFloor, bossLayout, slotDistribution, floorSlots, rollFloor, isBlock, evaluateRun, expectedFloor, floorAtChance, mulberry32, simulateRun, simulate, GOALS, score, summarize, evaluateAlloc, searchSpace, optimize, screenshotPreset };
+})();
+</script>
+<script id="worker-src" type="text/plain">// Web worker: evaluates batches of allocations or runs Monte Carlo checks.
+/* global Engine */
+self.onmessage = (e) => {
+  const m = e.data;
+  if (m.type === 'eval') {
+    const scores = m.allocs.map((a) => Engine.evaluateAlloc(m.profile, a, m.goal, m.fast).score);
+    self.postMessage({ id: m.id, scores });
+  } else if (m.type === 'sim') {
+    const st = Engine.computeStats(m.profile, m.alloc);
+    const res = Engine.simulate(st, m.profile.asc, m.runs, m.seed);
+    self.postMessage({ id: m.id, res });
+  }
+};
+</script>
+<script>// Page logic. Engine (global) is the bundled src/engine modules.
+/* global Engine */
+(() => {
+  const E = Engine;
+  const $ = (id) => document.getElementById(id);
+  const STORE_KEY = 'archaeology-point-planner-v1';
+  const FRAG_VARS = ['', '--frag-1', '--frag-2', '--frag-3', '--frag-4', '--frag-5', '--frag-6'];
+  const CARD_LEVELS = ['None', 'Card', 'Gilded', 'Polychrome', 'Infernal'];
+  const RARITY_LABEL = { dirt: 'Dirt', com: 'Common', rare: 'Rare', epic: 'Epic', leg: 'Legendary', myth: 'Mythic', div: 'Divine' };
+
+  // ---------- state ----------
+  const example = () => {
+    const { profile, alloc } = E.screenshotPreset();
+    return { profile, alloc, goal: { type: 'floorChance', chance: 5, weights: [0, 1, 1, 1, 1, 1, 1], perHour: false }, limits: {} };
+  };
+  const blank = () => ({
+    profile: { ...E.defaultProfile(), atkSpeed: 1 },
+    alloc: { Str: 0, Agi: 0, Per: 0, Int: 0, Luck: 0, Div: 0, Corr: 0 },
+    goal: { type: 'floorChance', chance: 5, weights: [0, 1, 1, 1, 1, 1, 1], perHour: false },
+    limits: {},
+  });
+  const merge = (base, s) => ({
+    profile: { ...base.profile, ...s.profile, upgrades: { ...base.profile.upgrades, ...(s.profile || {}).upgrades }, ext: { ...base.profile.ext, ...(s.profile || {}).ext }, cards: { ...base.profile.cards, ...(s.profile || {}).cards } },
+    alloc: { ...base.alloc, ...s.alloc },
+    goal: { ...base.goal, ...s.goal },
+    limits: { ...s.limits },
+  });
+  let state;
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    state = raw ? merge(blank(), JSON.parse(raw)) : example();
+  } catch (_) { state = example(); }
+  const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (_) { /* storage unavailable */ } };
+  let last = null; // last optimization result
+
+  const goalFor = () => ({ ...state.goal, chance: Math.min(0.99, Math.max(0.001, (state.goal.chance || 5) / 100)) });
+
+  // ---------- formatting ----------
+  const fmt = (v, d = 0) => (Number.isFinite(v) ? v.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d }) : '–');
+  const big = (v) => (v >= 1e6 ? fmt(v / 1e6, 2) + 'M' : v >= 1e4 ? fmt(v / 1e3, 1) + 'k' : fmt(v, v < 10 ? 2 : 0));
+  const pct = (v) => fmt(v * 100, 2) + '%';
+  const dur = (s) => (s >= 3600 ? `${fmt(s / 3600, 1)} h` : `${fmt(s / 60, 0)} min`);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v);
+    }
+    kids.flat().forEach((c) => c != null && n.append(c));
+    return n;
+  };
+  const numInput = (id, value, onChange, attrs = {}) => {
+    const i = el('input', { id, type: 'number', step: '1', ...attrs });
+    i.value = value ?? '';
+    i.addEventListener('input', () => onChange(i.value === '' ? null : Number(i.value)));
+    return i;
+  };
+
+  // ---------- setup form ----------
+  function buildGoal() {
+    $('goal-seg').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => { state.goal.type = b.dataset.goal; changed(); }));
+    $('chance').addEventListener('input', () => { state.goal.chance = Number($('chance').value) || 5; changed(); });
+    $('perhour').addEventListener('change', () => { state.goal.perHour = $('perhour').checked; changed(); });
+    const w = $('weights');
+    for (let t = 1; t <= 6; t++) {
+      const lab = el('label', { for: `w${t}` }, el('span', {}, el('span', { class: 'frag-dot', style: `background:var(${FRAG_VARS[t]})` }), E.FRAG_NAMES[t]));
+      lab.append(numInput(`w${t}`, state.goal.weights[t], (v) => { state.goal.weights[t] = v ?? 0; changed(); }, { min: '0', step: '0.1' }));
+      w.append(lab);
+    }
+  }
+
+  function buildBasics() {
+    $('asc').addEventListener('change', () => { state.profile.asc = Number($('asc').value); changed(true); });
+    for (const k of ['archLevel', 'highestFloor', 'atkSpeed']) {
+      $(k).addEventListener('input', () => { state.profile[k] = Number($(k).value) || (k === 'atkSpeed' ? 1 : 1); changed(true); });
+    }
+    const a = $('alloc');
+    for (const s of E.STATS) {
+      const lab = el('label', { for: `a-${s}`, id: `al-${s}` }, E.STAT_NAMES[s]);
+      lab.append(numInput(`a-${s}`, state.alloc[s], (v) => { state.alloc[s] = v ?? 0; changed(); }, { min: '0' }));
+      a.append(lab);
+    }
+  }
+
+  function buildUpgrades() {
+    const box = $('upgrades');
+    const groups = [
+      ['Gem upgrades', (u) => u.gem],
+      ['Fragment upgrades', (u) => !u.gem && u.asc === 0],
+      ['Ascension 1 upgrades', (u) => u.asc === 1],
+      ['Ascension 2 upgrades', (u) => u.asc === 2],
+    ];
+    for (const [title, test] of groups) {
+      const list = E.UPGRADES.filter(test);
+      const head = el('div', { class: 'group-head' }, el('h3', { text: title }),
+        el('button', { type: 'button', class: 'btn link', text: 'Max all', onclick: () => { list.forEach((u) => { state.profile.upgrades[u.id] = u.cap; }); changed(true); } }));
+      const body = el('div');
+      for (const u of list) {
+        const row = el('div', { class: 'upg', id: `upg-row-${u.id}` },
+          el('div', {}, el('div', { class: 'name', text: u.name }), el('div', { class: 'meta', text: `max ${u.cap}${u.stage ? ` · unlocks at stage ${u.stage}` : ''}${u.asc ? ` · Ascension ${u.asc}+` : ''}` })));
+        row.append(numInput(`upg-${u.id}`, state.profile.upgrades[u.id], (v) => { state.profile.upgrades[u.id] = Math.max(0, Math.min(u.cap, v ?? 0)); changed(); }, { min: '0', max: String(u.cap), 'aria-label': u.name }));
+        body.append(row);
+      }
+      box.append(el('div', {}, head, body));
+    }
+  }
+
+  const EXT = [
+    ['avada', 'check', 'Avada Keda- skill (ability duration, cooldown, instacharge)'],
+    ['blockBonker', 'check', 'Block Bonker skill (damage, stamina, speed mods)'],
+    ['archBundle', 'check', 'Archaeology bundle (fragments x1.25)'],
+    ['ascBundle', 'check', 'Ascension bundle (exp, auto-tap, loot mods, gold crosshair)'],
+    ['challenge14', 'check', 'Divine Challenge 14 (fragments x1.1)'],
+    ['archCard', 'num', 'Arch Ability card level (0–4)', { min: '0', max: '4' }],
+    ['archCardInfernal', 'num', 'Ability card infernal cooldown reduction (%)', { min: '0', step: '0.01' }],
+    ['hestia', 'num', 'Hestia idol level', { min: '0' }],
+    ['axolotl', 'num', 'Axolotl pet quest rank (−1 if not unlocked)', { min: '-1', max: '11' }],
+    ['geoduck', 'num', 'Geoduck tribute: mythic chests owned', { min: '0' }],
+    ['hades', 'num', 'Hades idol level', { min: '0' }],
+    ['lynx', 'num', 'Lynx star level', { min: '0', max: '50' }],
+    ['kromak', 'check', 'Kromak statue upgraded'],
+    ['kromakGilded', 'num', 'W4 statues gilded', { min: '0', max: '9' }],
+    ['wq22', 'check', 'World Quest 22 done'],
+    ['challenge17', 'check', 'Divine Challenge 17 done'],
+    ['totalInfernalCards', 'num', 'Infernal cards outside archaeology', { min: '0' }],
+  ];
+  function buildExternals() {
+    const checks = el('div', { class: 'stack' });
+    const nums = el('div', { class: 'grid2' });
+    for (const [k, kind, label, attrs] of EXT) {
+      if (kind === 'check') {
+        const i = el('input', { type: 'checkbox', id: `x-${k}` });
+        i.addEventListener('change', () => { state.profile.ext[k] = i.checked; changed(); });
+        checks.append(el('label', { class: 'check', for: `x-${k}` }, i, label));
+      } else {
+        const lab = el('label', { for: `x-${k}` }, label);
+        lab.append(numInput(`x-${k}`, state.profile.ext[k], (v) => { state.profile.ext[k] = v ?? 0; changed(); }, attrs));
+        nums.append(lab);
+      }
+    }
+    $('externals').append(checks, nums);
+  }
+
+  function buildCards() {
+    const c = $('cards');
+    c.append(el('span'), ...[1, 2, 3, 4].map((t) => el('span', { class: 'h', text: `Tier ${t}` })));
+    for (const r of E.RARITIES) {
+      c.append(el('span', { text: RARITY_LABEL[r] }));
+      for (let t = 1; t <= 4; t++) {
+        const id = `${r}${t}`;
+        const s = el('select', { id: `c-${id}`, 'aria-label': `${RARITY_LABEL[r]} tier ${t} card` }, CARD_LEVELS.map((n, i) => el('option', { value: String(i), text: n })));
+        s.addEventListener('change', () => { state.profile.cards[id] = Number(s.value); changed(); });
+        c.append(s);
+      }
+    }
+    document.querySelectorAll('[data-cards]').forEach((b) => b.addEventListener('click', () => {
+      for (const id of E.BLOCK_IDS) if (!id.endsWith('4')) state.profile.cards[id] = Number(b.dataset.cards);
+      changed(true);
+    }));
+  }
+
+  function buildLimits() {
+    const box = $('limits');
+    for (const s of E.STATS) {
+      const row = el('div', { class: 'grid3', id: `lim-${s}` }, el('span', { class: 'small', text: E.STAT_NAMES[s], style: 'align-self:center' }));
+      for (const side of ['min', 'max']) {
+        const lab = el('label', { for: `l-${s}-${side}` }, side);
+        lab.append(numInput(`l-${s}-${side}`, (state.limits[s] || {})[side], (v) => {
+          state.limits[s] = { ...(state.limits[s] || {}) };
+          if (v == null) delete state.limits[s][side]; else state.limits[s][side] = v;
+          changed();
+        }, { min: '0' }));
+        row.append(lab);
+      }
+      box.append(row);
+    }
+  }
+
+  // Write state into every control (after load/reset/bulk edits).
+  function syncForm() {
+    const p = state.profile;
+    $('asc').value = String(p.asc);
+    $('archLevel').value = p.archLevel;
+    $('highestFloor').value = p.highestFloor;
+    $('atkSpeed').value = p.atkSpeed || 1;
+    $('chance').value = state.goal.chance;
+    $('perhour').checked = !!state.goal.perHour;
+    for (let t = 1; t <= 6; t++) $(`w${t}`).value = state.goal.weights[t];
+    for (const s of E.STATS) $(`a-${s}`).value = state.alloc[s] || 0;
+    for (const u of E.UPGRADES) $(`upg-${u.id}`).value = p.upgrades[u.id] || 0;
+    for (const [k, kind] of EXT) {
+      if (kind === 'check') $(`x-${k}`).checked = !!p.ext[k]; else $(`x-${k}`).value = p.ext[k] ?? 0;
+    }
+    for (const id of E.BLOCK_IDS) $(`c-${id}`).value = String(p.cards[id] || 0);
+    for (const s of E.STATS) for (const side of ['min', 'max']) $(`l-${s}-${side}`).value = (state.limits[s] || {})[side] ?? '';
+  }
+
+  // Refresh everything derived from state that does not need the optimizer.
+  function refresh() {
+    const p = state.profile;
+    const g = state.goal.type;
+    $('goal-seg').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.goal === g)));
+    $('goal-floor').hidden = g !== 'floorChance';
+    $('goal-frags').hidden = g !== 'frags';
+    $('perhour-wrap').hidden = !(g === 'frags' || g === 'xp');
+
+    const caps = E.statCaps(p);
+    const budget = E.statBudget(p);
+    const used = E.STATS.reduce((s, k) => s + (caps[k] > 0 ? state.alloc[k] || 0 : 0), 0);
+    for (const s of E.STATS) {
+      $(`al-${s}`).hidden = caps[s] <= 0;
+      $(`a-${s}`).max = String(caps[s]);
+      $(`lim-${s}`).hidden = caps[s] <= 0;
+    }
+    $('budget-line').textContent = `${budget} skill points to spend (level ${p.archLevel}${p.asc >= 1 ? ` + ${E.upgradeLevel(p, 12)} from upgrades` : ''}). Current points use ${used}.`;
+    $('budget-line').style.color = used > budget ? 'var(--bad)' : '';
+
+    let owned = 0;
+    for (const u of E.UPGRADES) {
+      const locked = p.asc < u.asc;
+      $(`upg-row-${u.id}`).classList.toggle('locked', locked);
+      $(`upg-${u.id}`).disabled = locked;
+      if (!locked && (p.upgrades[u.id] || 0) > 0) owned++;
+    }
+    $('upg-count').textContent = `${owned} owned`;
+    $('card-count').textContent = `${Object.values(p.cards).filter((v) => v > 0).length} of 28 owned`;
+
+    const st = E.computeStats(p, state.alloc);
+    const rows = [
+      ['Max Stamina', fmt(st.maxSta)], ['Damage', fmt(st.damage)], ['Armor Penetration', fmt(st.armorPen)],
+      ['Atk Speed', `${fmt(st.atkSpeed, 1)}/sec`], ['Crit Chance', pct(st.critChance)], ['Crit Damage', `${fmt(st.critDmg, 2)}x`],
+      ['Super Crit Chance', pct(st.superCritChance)], ['Super Crit Damage', `${fmt(st.superCritDmg, 2)}x`],
+      ['Ultra Crit Chance', pct(st.ultraCritChance)], ['Ultra Crit Damage', `${fmt(st.ultraCritDmg, 2)}x`],
+      ['Ability Instacharge', pct(st.abilityInsta)], ['Crosshair Auto-Tap', pct(st.autoTap)],
+      ['Gold Crosshair Chance', pct(st.goldChance)], ['Gold Crosshair Multi', `${fmt(st.goldMult, 2)}x`],
+      ['Exp Gain', `${fmt(st.expGain, 2)}x`], ['Fragment Gain', `${fmt(st.fragGain, 2)}x`],
+      ['Exp Mod Chance', pct(st.expModChance)], ['Exp Mod Gain', `${fmt(st.expModGain, 2)}x`],
+      ['Loot Mod Chance', pct(st.lootModChance)], ['Loot Mod Gain', `${fmt(st.lootModGain, 2)}x`],
+      ['Speed Mod Chance', pct(st.speedModChance)], ['Speed Mod Gain', `+${fmt(st.speedModGain)}`],
+      ['Stamina Mod Chance', pct(st.staModChance)], ['Stamina Mod Gain', `+${fmt(st.staModGain)}`],
+    ];
+    $('statsheet').replaceChildren(...rows.map(([k, v]) => el('div', {}, el('span', { text: k }), el('span', { text: v }))));
+  }
+
+  let dirty = false;
+  function changed(resync) {
+    save();
+    if (resync) syncForm();
+    refresh();
+    if (last && !dirty) {
+      dirty = true;
+      $('status').textContent = 'Setup changed since the last search. Run it again to update.';
+    }
+  }
+
+  // ---------- workers ----------
+  let pool = [];
+  let reqId = 0;
+  const pending = new Map();
+  function startPool() {
+    try {
+      const src = $('engine-src').textContent + '\n' + $('worker-src').textContent;
+      const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+      const n = Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 1));
+      pool = Array.from({ length: n }, () => {
+        const w = new Worker(url);
+        w.onmessage = (e) => { const cb = pending.get(e.data.id); pending.delete(e.data.id); cb && cb(e.data); };
+        w.onerror = () => { pool = []; };
+        return w;
+      });
+    } catch (_) { pool = []; }
+  }
+  const call = (w, msg) => new Promise((resolve) => { const id = ++reqId; pending.set(id, resolve); w.postMessage({ ...msg, id }); });
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+
+  async function evalBatch(allocs, goal) {
+    if (!pool.length) {
+      const out = [];
+      for (let i = 0; i < allocs.length; i++) {
+        out.push(E.evaluateAlloc(state.profile, allocs[i], goal, true).score);
+        if (i % 4 === 3) await tick();
+      }
+      return out;
+    }
+    const size = Math.ceil(allocs.length / pool.length);
+    const parts = await Promise.all(pool.map((w, i) => {
+      const chunk = allocs.slice(i * size, (i + 1) * size);
+      return chunk.length ? call(w, { type: 'eval', profile: state.profile, goal, allocs: chunk, fast: true }).then((r) => r.scores) : [];
+    }));
+    return parts.flat();
+  }
+
+  // ---------- optimize ----------
+  async function run() {
+    const btn = $('run');
+    btn.disabled = true;
+    dirty = false;
+    const goal = goalFor();
+    const profile = JSON.parse(JSON.stringify(state.profile));
+    const t0 = performance.now();
+    try {
+      const r = await E.optimize({
+        profile, limits: state.limits, start: state.alloc,
+        evalBatch: (a) => evalBatch(a, goal),
+        onProgress: ({ phase, evals }) => {
+          $('bar').style.width = `${Math.min(95, phase === 'grid' ? 30 : 30 + evals / 25)}%`;
+          $('status').textContent = `${phase === 'grid' ? 'Scanning the range of builds' : 'Fine-tuning'}… ${evals} builds checked`;
+        },
+      });
+      // Re-score the finalists with the precise model.
+      const finals = r.top.map((t) => ({ alloc: t.alloc, ...E.evaluateAlloc(profile, t.alloc, goal, false) }))
+        .sort((a, b) => b.score - a.score);
+      const cur = { alloc: state.alloc, ...E.evaluateAlloc(profile, state.alloc, goal, false) };
+      last = { goal, profile, finals, cur, evals: r.evals, secs: (performance.now() - t0) / 1000, sim: null };
+      $('bar').style.width = '100%';
+      $('status').textContent = `Checked ${r.evals} builds in ${fmt(last.secs, 1)} s.`;
+      renderResults();
+    } catch (err) {
+      $('status').textContent = err.message;
+      $('bar').style.width = '0';
+    }
+    btn.disabled = false;
+  }
+
+  function mainMetric(goal, s) {
+    switch (goal.type) {
+      case 'frags': return { label: goal.perHour ? 'Weighted fragments / hour' : 'Weighted fragments / run', value: big(E.score(goal, s.res)) };
+      case 'xp': return { label: goal.perHour ? 'Experience / hour' : 'Experience / run', value: big(E.score(goal, s.res)) };
+      case 'expFloor': return { label: 'Average highest floor', value: fmt(E.expectedFloor(s.res.reach), 1) };
+      default: return { label: `Floor reached in ${fmt(goal.chance * 100, 1)}% of runs`, value: fmt(E.floorAtChance(s.res.reach, goal.chance).floor) };
+    }
+  }
+
+  function renderResults() {
+    const { goal, profile, finals, cur } = last;
+    const best = finals[0];
+    const caps = E.statCaps(profile);
+    const stats = E.STATS.filter((s) => caps[s] > 0);
+    const sb = E.summarize(goal, best.res), sc = E.summarize(goal, cur.res);
+    const main = mainMetric(goal, best), mainCur = mainMetric(goal, cur);
+    const out = [];
+
+    // Verdict: recommended points.
+    const bars = stats.map((s) => {
+      const v = best.alloc[s] || 0, c = cur.alloc[s] || 0;
+      const d = v - c;
+      return el('div', { class: 'bar' }, el('span', { text: E.STAT_NAMES[s] }),
+        el('div', { class: 'track' }, el('div', { class: 'fill', style: `width:${(100 * v) / caps[s]}%` }), el('div', { class: 'cur', style: `left:calc(${(100 * c) / caps[s]}% - 1px)`, title: `current ${c}` })),
+        el('span', { class: 'val num' }, `${v}`, el('span', { class: `small delta ${d > 0 ? 'up' : d < 0 ? 'down' : ''}`, text: d ? ` ${d > 0 ? '+' : ''}${d}` : '' })));
+    });
+    const unspent = best.alloc.Unspent || 0;
+    out.push(el('div', { class: 'panel verdict' },
+      el('h2', { text: 'Best points' }),
+      el('div', { class: 'bars' }, bars),
+      el('p', { class: 'small muted', text: `Bar = recommended, tick = your current points (${Object.entries(cur.alloc).filter(([k, v]) => v && caps[k]).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}).${unspent ? ` ${unspent} points stay unspent because every allowed skill is capped.` : ''}` })));
+
+    // KPIs.
+    const kpi = (l, v, c, cls = '') => el('div', { class: `kpi ${cls}` }, el('span', { class: 'l', text: l }), el('span', { class: 'v', text: v }), el('span', { class: 'small muted', text: c != null ? `now ${c}` : '' }));
+    out.push(el('div', { class: 'panel' },
+      el('div', { class: 'kpis' },
+        kpi(main.label, main.value, mainCur.value, 'main'),
+        goal.type !== 'floorChance' ? kpi('Floor reached in 5% of runs', fmt(E.floorAtChance(best.res.reach, 0.05).floor), fmt(E.floorAtChance(cur.res.reach, 0.05).floor)) : null,
+        kpi('Median highest floor', fmt(sb.median), fmt(sc.median)),
+        kpi('Experience / run', big(sb.xp), big(sc.xp)),
+        kpi('Run length', dur(sb.time), dur(sc.time)))));
+
+    // Reach curve.
+    out.push(el('div', { class: 'panel' }, el('h3', { text: 'Chance to reach each floor' }), reachChart(best.res.reach, cur.res.reach, goal.type === 'floorChance' ? goal.chance : null),
+      el('p', { class: 'small muted', text: 'Solid: recommended points. Dashed: your current points. Each run starts at floor 1 with full stamina.' })));
+
+    // Fragments table.
+    const fr = el('tbody', {}, [1, 2, 3, 4, 5, 6].filter((t) => profile.asc >= 1 || t < 6).map((t) => el('tr', {},
+      el('td', {}, el('span', { class: 'frag-dot', style: `background:var(${FRAG_VARS[t]})` }), E.FRAG_NAMES[t]),
+      el('td', { class: 'num', text: fmt(sb.frags[t], 2) }), el('td', { class: 'num', text: fmt(sc.frags[t], 2) }),
+      el('td', { class: 'num', text: fmt(sb.frags[t] * 3600 / Math.max(1, sb.time), 1) }))));
+    out.push(el('div', { class: 'panel' }, el('h3', { text: 'Fragments per run' }),
+      el('div', { class: 'tablewrap' }, el('table', {}, el('thead', {}, el('tr', {}, ['Type', 'Best', 'Now', 'Best / hour'].map((h) => el('th', { text: h })))), fr))));
+
+    // Alternatives.
+    const alt = finals.slice(0, 6).map((f) => el('tr', {}, el('td', { class: 'num', text: stats.map((s) => f.alloc[s] || 0).join(' / ') }), el('td', { class: 'num', text: mainMetric(goal, f).value })));
+    out.push(el('div', { class: 'panel' }, el('h3', { text: 'Close runners-up' }),
+      el('p', { class: 'small muted', text: `Points as ${stats.map((s) => E.STAT_NAMES[s]).join(' / ')}. Builds this close are a matter of taste.` }),
+      el('div', { class: 'tablewrap' }, el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Points' }), el('th', { text: main.label }))), el('tbody', {}, alt)))));
+
+    // Simulation check.
+    const simBox = el('div', { class: 'stack', id: 'sim-box' });
+    out.push(el('div', { class: 'panel' }, el('h3', { text: 'Double-check with simulated runs' }),
+      el('p', { class: 'small muted', text: 'Plays 2,000 runs hit by hit for both builds, with every random roll, and compares them with the calculation above.' }),
+      el('div', { class: 'row' }, el('button', { type: 'button', class: 'btn', id: 'sim-btn', text: 'Simulate 2,000 runs', onclick: runSim })), simBox));
+
+    out.push(el('p', { class: 'note', text: 'Abilities are assumed on auto-cast, crosshairs are auto-taps only (no manual tapping), and fairies are ignored. Rewards are expected values per run.' }));
+    $('results').replaceChildren(...out);
+    if (last.sim) renderSim();
+  }
+
+  function reachChart(a, b, q) {
+    const W = 560, H = 220, L = 34, R = 10, T = 10, Bm = 26;
+    const range = (r) => {
+      let lo = 1, hi = r.length - 1;
+      while (lo < hi && r[lo + 1] > 0.995) lo++;
+      while (hi > lo && r[hi] < 0.002) hi--;
+      return [lo, hi];
+    };
+    const [a0, a1] = range(a), [b0, b1] = range(b);
+    const x0 = Math.max(1, Math.min(a0, b0) - 1), x1 = Math.max(a1, b1) + 1;
+    const X = (f) => L + ((f - x0) / Math.max(1, x1 - x0)) * (W - L - R);
+    const Y = (p) => T + (1 - p) * (H - T - Bm);
+    const path = (r) => {
+      let d = '';
+      for (let f = x0; f <= x1; f++) d += `${d ? 'L' : 'M'}${X(f).toFixed(1)},${Y(r[f] ?? 0).toFixed(1)}`;
+      return d;
+    };
+    const ns = 'http://www.w3.org/2000/svg';
+    const s = (tag, attrs, text) => { const n = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); if (text != null) n.textContent = text; return n; };
+    const svg = s('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Chance to reach each floor' });
+    for (const p of [0, 0.25, 0.5, 0.75, 1]) {
+      svg.append(s('line', { x1: L, x2: W - R, y1: Y(p), y2: Y(p), stroke: 'var(--line)', 'stroke-width': 1 }));
+      svg.append(s('text', { x: L - 6, y: Y(p) + 3, 'text-anchor': 'end' }, `${p * 100}%`));
+    }
+    const stepX = Math.max(1, Math.ceil((x1 - x0) / 8 / 5) * 5);
+    for (let f = Math.ceil(x0 / stepX) * stepX; f <= x1; f += stepX) svg.append(s('text', { x: X(f), y: H - 8, 'text-anchor': 'middle' }, String(f)));
+    if (q) {
+      svg.append(s('line', { x1: L, x2: W - R, y1: Y(q), y2: Y(q), stroke: 'var(--accent)', 'stroke-dasharray': '2 3', 'stroke-width': 1 }));
+    }
+    svg.append(s('path', { d: path(b), fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.5, 'stroke-dasharray': '5 4' }));
+    svg.append(s('path', { d: path(a), fill: 'none', stroke: 'var(--accent)', 'stroke-width': 2.2 }));
+    return el('div', { class: 'tablewrap' }, svg);
+  }
+
+  async function runSim() {
+    const btn = $('sim-btn');
+    btn.disabled = true;
+    btn.textContent = 'Simulating…';
+    const { profile, finals, cur } = last;
+    const runs = 2000;
+    const job = (alloc, seed) => (pool.length >= 1
+      ? call(pool[seed % pool.length], { type: 'sim', profile, alloc, runs, seed }).then((r) => r.res)
+      : tick().then(() => E.simulate(E.computeStats(profile, alloc), profile.asc, runs, seed)));
+    const [b, c] = await Promise.all([job(finals[0].alloc, 1), job(cur.alloc, 2)]);
+    last.sim = { b, c };
+    renderSim();
+    btn.disabled = false;
+    btn.textContent = 'Simulate 2,000 runs';
+  }
+
+  function renderSim() {
+    const { goal, finals, cur, sim } = last;
+    const q = goal.type === 'floorChance' ? goal.chance : 0.05;
+    const tot = (fr) => fr.slice(1).reduce((s, v, i) => s + v * (goal.type === 'frags' ? goal.weights[i + 1] : 1), 0);
+    const row = (label, calcB, simB, calcC, simC) => el('tr', {}, el('td', { text: label }), ...[calcB, simB, calcC, simC].map((v) => el('td', { class: 'num', text: v })));
+    const sb = E.summarize(goal, finals[0].res), sc = E.summarize(goal, cur.res);
+    const fq = (r) => fmt(E.floorAtChance(r, q).floor);
+    $('sim-box').replaceChildren(el('div', { class: 'tablewrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, ['', 'Best calc', 'Best sim', 'Now calc', 'Now sim'].map((h) => el('th', { text: h })))),
+      el('tbody', {},
+        row(`Floor in ${fmt(q * 100, 1)}% of runs`, fq(sb.reach), fq(sim.b.reach), fq(sc.reach), fq(sim.c.reach)),
+        row('Average floor', fmt(sb.expFloor, 1), fmt(sim.b.expFloor, 1), fmt(sc.expFloor, 1), fmt(sim.c.expFloor, 1)),
+        row('Experience / run', big(sb.xp), big(sim.b.xp), big(sc.xp), big(sim.c.xp)),
+        row(goal.type === 'frags' ? 'Weighted fragments' : 'Fragments / run', fmt(tot(sb.frags), 1), fmt(tot(sim.b.frags), 1), fmt(tot(sc.frags), 1), fmt(tot(sim.c.frags), 1)),
+      ))));
+  }
+
+  // ---------- import / export ----------
+  function buildIO() {
+    $('copy').addEventListener('click', () => {
+      const text = JSON.stringify({ profile: state.profile, alloc: state.alloc, goal: state.goal, limits: state.limits });
+      $('io').value = text;
+      const done = () => { $('io-msg').textContent = 'Copied.'; };
+      try {
+        navigator.clipboard.writeText(text).then(done, () => { $('io').select(); $('io-msg').textContent = 'Selected. Copy it with your keyboard or menu.'; });
+      } catch (_) { $('io').select(); }
+    });
+    $('apply').addEventListener('click', () => {
+      try {
+        state = merge(blank(), JSON.parse($('io').value));
+        $('io-msg').textContent = 'Loaded.';
+        changed(true);
+      } catch (_) { $('io-msg').textContent = 'That text is not a saved setup. Copy it again from "Copy setup".'; }
+    });
+    $('load-example').addEventListener('click', () => { const g = state.goal; state = example(); state.goal = g; changed(true); });
+    $('reset').addEventListener('click', () => { const g = state.goal; state = blank(); state.goal = g; changed(true); });
+  }
+
+  buildGoal(); buildBasics(); buildUpgrades(); buildExternals(); buildCards(); buildLimits(); buildIO();
+  syncForm();
+  refresh();
+  $('run').addEventListener('click', run);
+  startPool();
+})();
+</script>

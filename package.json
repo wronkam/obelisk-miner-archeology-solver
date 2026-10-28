@@ -1,0 +1,12 @@
+{
+  "name": "obelisk-miner-archeology-solver",
+  "version": "1.0.0",
+  "description": "Optimal skill point allocation for Obelisk Miner's Archaeology minigame",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "build": "node tools/build.js"
+  },
+  "license": "MIT"
+}
