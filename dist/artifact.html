@@ -1558,8 +1558,8 @@ self.onmessage = (e) => {
   let state;
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    state = raw ? merge(blank(), JSON.parse(raw)) : example();
-  } catch (_) { state = example(); }
+    state = raw ? merge(blank(), JSON.parse(raw)) : blank();
+  } catch (_) { state = blank(); }
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (_) { /* storage unavailable */ } };
   let last = null; // last optimization result
 
